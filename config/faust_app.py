@@ -45,13 +45,14 @@ class KafkaSender:
         self.producer.send(topic, value=message)
 
 
+sender = KafkaSender([KAFKA_URL, ])
+
 app = faust.App(
     'auth_bus',
     broker=KAFKA_URL,
     # store='rocksdb://'
     autodiscovery=True,
 )
-sender = KafkaSender([KAFKA_URL, ])
 
 
 class AuthRequest(faust.Record):
@@ -101,7 +102,7 @@ async def auth_requests_agent(stream):
             }
             logger.error('Токен не валиден!')
             sender.send(msg, AUTH_RESPONSE)
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return
 
         token = value.token
         user_id = UserService.get_user_id_from_token(token)
@@ -119,7 +120,6 @@ async def auth_requests_agent(stream):
         }
 
         sender.send(msg, AUTH_RESPONSE)
-        return Response(status=status.HTTP_200_OK)
 
 
 @app.agent(response_topic)

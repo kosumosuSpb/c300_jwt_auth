@@ -1,6 +1,7 @@
 /.idea
 **/.venv
 **/.env
+/c300_requirements
 
 **/*.sqlite*
 /*-data/

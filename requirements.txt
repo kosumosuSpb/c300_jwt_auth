@@ -1,0 +1,9 @@
+requests~=2.31.0
+Django~=4.2.3
+djangorestframework~=3.14.0
+djangorestframework-jwt~=1.11.0
+djangorestframework-simplejwt
+faust-streaming~=0.10.14
+kafka-python~=2.0.2
+PyJWT~=1.7.1
+asgiref~=3.7.2

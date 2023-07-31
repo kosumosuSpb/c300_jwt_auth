@@ -1,6 +1,6 @@
 # c300 Микросервис авторизации на JWT Cookies HTTPOnly
 
-**Пока на этапе теста**
+**Пока на этапе теста и без HTTPOnly**
 
 Основан на: 
 * Django 4.2
@@ -41,6 +41,41 @@
 Чтобы получить токены доступа и обновления, нужно создать пользователя. 
 Можно создать суперпользователя, и авторизоваться через него, в ответ получить два токена: 
 `access` и `refresh`. `Access` нужен для аутентификации, а `Refresh` - для обновления access токена. 
+
+#### Регистрация суперпользователя:
+
+    python manage.py createsuperuser
+
+#### Регистрация пользователя: 
+
+    curl --location 'http://localhost:8000/api/v1/register/' \
+    --form 'email="another@email.go"' \
+    --form 'username="another_user"' \
+    --form 'password="pwdtoanotheruser"' \
+    --form 'name="MyNameIs"' \
+    --form 'type="W"'
+
+#### Запрос на логин:
+
+    curl --location 'http://localhost:8000/api/v1/login/' \
+    --form 'email="another@email.go"' \
+    --form 'password="pwdtoanotheruser"'
+
+#### Запрос на верификацию токена:
+
+    curl --location 'http://localhost:8000/api/v1/verify/' \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjg5NzYzMjYxLCJpYXQiOjE2ODk3NTUxODUsImp0aSI6ImNjOTU1MzFlYmY2YzQyNWRhODRmMGU1MmJiOGY5ZjUxIiwidXNlcl9pZCI6MX0.VojXfhnnD_Fmx97oYo1v36Ye13_eS-1zkfdyN-hJ7FE"
+    }'
+
+#### Запрос на обновление access токена:
+
+    curl --location 'http://localhost:8000/api/v1/login/refresh/' \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MDg3ODk0NCwiaWF0IjoxNjkwNzkyNTQ0LCJqdGkiOiJjMWFiY2E4YjA0ZjY0Nzc0OTM0NjQ0YWM5NjNiZWVmZCIsInVzZXJfaWQiOjF9.F1a_yl9Ffubbe9DsHPILZmOq6hrSCagk9bxDJ0evdpE"
+    }'
 
 ### Отправка данных в кафку
 
