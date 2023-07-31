@@ -1,0 +1,11 @@
+/.idea
+**/.venv
+**/.env
+
+**/*.sqlite*
+/*-data/
+
+!/.gitkeep
+**/*.log*
+
+server.properties
