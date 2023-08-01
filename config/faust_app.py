@@ -5,8 +5,6 @@ import json
 import django
 import faust
 from asgiref.sync import sync_to_async
-from rest_framework.response import Response
-from rest_framework import status
 from kafka import KafkaProducer
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -24,6 +22,7 @@ AUTH_RESPONSE = 'auth_response'
 
 
 class KafkaSender:
+    """Простой класс для отправки сообщений в кафку"""
     def __init__(self, kafka_servers: list[str] | None = None):
         self.servers = self._repair_servers(kafka_servers)
         self.producer = self._get_producer()
@@ -85,12 +84,12 @@ async def auth_requests_agent(stream):
         assert isinstance(value, AuthRequest), 'Не верный тип: должен быть AuthRequest'
         logger.info('Value in faust stream: %s', value)
         logger.info('Value as dict: %s', value.asdict())
-        value_dict = value.asdict()
 
         if not value.token:
             logger.info('Нет токена в ивенте')
             return
 
+        value_dict = value.asdict()
         is_valid = UserService.verify_token(value_dict)
         logger.info('Валиден ли токен? -> %s', is_valid)
 

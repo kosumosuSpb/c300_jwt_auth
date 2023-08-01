@@ -1,15 +1,11 @@
-import os
 import logging
 
-import django
 import jwt
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
 from app.authorization.models import UserData
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-# django.setup()
 from config.settings import SIMPLE_JWT
 
 

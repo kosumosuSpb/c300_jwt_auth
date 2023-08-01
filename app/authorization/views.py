@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework import generics, status
 from rest_framework_simplejwt.views import TokenVerifyView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import Token
 
 from app.authorization.user_service import UserService
 from .serializers import UserSerializer
