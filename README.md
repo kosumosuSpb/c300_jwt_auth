@@ -1,6 +1,8 @@
 # c300 Микросервис авторизации на JWT Cookies HTTPOnly
 
-**Пока на этапе теста и без HTTPOnly**
+**Пока на этапе теста**
+
+[a07b09f](https://github.com/kosumosuSpb/c300_jwt_auth/commit/a07b09f9b5c6cbb1394a342b6f6d6d1447b71fba) - коммит с токенами не через куки
 
 Основан на: 
 * Django 4.2
@@ -65,17 +67,15 @@
 
     curl --location 'http://localhost:8000/api/v1/verify/' \
     --header 'Content-Type: application/json' \
+    --header 'Cookie: refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MDk5MDc4MiwiaWF0IjoxNjkwOTA0MzgyLCJqdGkiOiJjZDQxZDg0OTI1MjU0ZjdjOTgzMzY2NTI2NjdiY2RjMyIsInVzZXJfaWQiOjF9.HQSbmn1n6fSICgikfsPSdqdNrXZ8UsPs_gk_2Ys2Am0' \
     --data '{
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjg5NzYzMjYxLCJpYXQiOjE2ODk3NTUxODUsImp0aSI6ImNjOTU1MzFlYmY2YzQyNWRhODRmMGU1MmJiOGY5ZjUxIiwidXNlcl9pZCI6MX0.VojXfhnnD_Fmx97oYo1v36Ye13_eS-1zkfdyN-hJ7FE"
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkwODkxNjI2LCJpYXQiOjE2OTA4OTEwMjYsImp0aSI6IjU4ZmI4MTg1YTM4NjQ0YzI5MzA3ZDI3MTY3NDEzNWQzIiwidXNlcl9pZCI6MX0.51lO6L7ns_Kcrt9zlUudSVt8bGNl3DC_V8tYb5CXriM"
     }'
 
 #### Запрос на обновление access токена:
 
-    curl --location 'http://localhost:8000/api/v1/login/refresh/' \
-    --header 'Content-Type: application/json' \
-    --data '{
-        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MDg3ODk0NCwiaWF0IjoxNjkwNzkyNTQ0LCJqdGkiOiJjMWFiY2E4YjA0ZjY0Nzc0OTM0NjQ0YWM5NjNiZWVmZCIsInVzZXJfaWQiOjF9.F1a_yl9Ffubbe9DsHPILZmOq6hrSCagk9bxDJ0evdpE"
-    }'
+    curl --location --request POST 'http://localhost:8000/api/v1/login/refresh/' \
+    --header 'Cookie: refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MDk5MDc4MiwiaWF0IjoxNjkwOTA0MzgyLCJqdGkiOiJjZDQxZDg0OTI1MjU0ZjdjOTgzMzY2NTI2NjdiY2RjMyIsInVzZXJfaWQiOjF9.HQSbmn1n6fSICgikfsPSdqdNrXZ8UsPs_gk_2Ys2Am0'
 
 ### Отправка данных в кафку
 
