@@ -67,13 +67,20 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'app.authorization.authentication.CookiesJWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         # 'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         # 'rest_framework.authentication.SessionAuthentication',
         # 'rest_framework.authentication.BasicAuthentication',
     ),
 }
 
+# CSRF
+CSRF_USE_SESSIONS = False
+# CSRF_COOKIE_AGE = 604800  # 604800 - one week
+CSRF_COOKIE_NAME = 'csrftoken'
+
+# JWT
 ACCESS_TOKEN_LIFETIME = timedelta(minutes=10)
 REFRESH_TOKEN_LIFETIME = timedelta(days=1)
 
@@ -111,7 +118,7 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_REFRESH': 'refresh_token',  # Cookie name. Enables cookies if value is set.
     'AUTH_COOKIE_DOMAIN': None,     # A string like "example.com", or None for standard domain cookie.
     'AUTH_COOKIE_SECURE': False,    # Whether the auth cookies should be secure (https:// only).
-    'AUTH_COOKIE_HTTP_ONLY': True,  # Http only cookie flag.It's not fetch by javascript.
+    'AUTH_COOKIE_HTTP_ONLY': True,  # Http only cookie flag. It's not fetch by javascript.
     'AUTH_COOKIE_PATH': '/',        # The path of the auth cookie.
     'AUTH_COOKIE_SAMESITE': 'Lax',  # Whether to set the flag restricting cookie leaks on cross-site requests. This can be 'Lax', 'Strict', or None to disable the flag.
 }
