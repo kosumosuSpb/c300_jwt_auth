@@ -1,6 +1,8 @@
 import logging
 
 import jwt
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
@@ -46,6 +48,25 @@ class UserService:
         except (ValidationError, TokenError) as ve:
             logging.error('Ошибка токена: %s', ve)
             return False
+        return True
+
+    def del_user(self):
+        """Удаление текущего пользователя"""
+        status = self._del_user(self.user.pk)
+        return status
+
+    @staticmethod
+    def _del_user(user_id: int | None = None):
+        """Удаление пользователя"""
+        logger.debug('Запущено удаление пользователя %s', user_id)
+        assert isinstance(user_id, int), 'Тип данных user_id должен быть int или None!'
+        try:
+            user: UserData = UserData.objects.get(pk=user_id)
+        except ObjectDoesNotExist as e:
+            logger.error('Пользователь с id: %s не найден: %s', user_id, e)
+            return False
+        user.delete()
+        logger.debug('Пользователь %s успешно удалён', user)
         return True
 
     @classmethod

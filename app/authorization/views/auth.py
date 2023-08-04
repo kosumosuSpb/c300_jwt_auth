@@ -1,3 +1,8 @@
+"""
+Login, Logout, TokenRefresh
+"""
+
+
 import logging
 
 import jwt
@@ -12,32 +17,18 @@ from rest_framework_simplejwt.views import (
 )
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-from app.authorization.user_service import UserService
-from app.authorization.authentication import CookiesJWTAuthentication
-from .serializers import UserSerializer
-from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME
+from app.authorization.services.user_service import UserService
 from app.authorization.services.secure import (
     set_access_to_cookie,
     set_refresh_to_cookie,
     set_csrf,
     del_auth_cookies,
 )
+from app.authorization.serializers import UserSerializer
+from config.settings import SIMPLE_JWT
 
 
 logger = logging.getLogger(__name__)
-
-
-class RegisterView(APIView):
-    """Регистрация пользователей"""
-    authentication_classes = []
-    permission_classes = []
-
-    def post(self, request: Request):
-        logger.debug('RegisterView - POST - request data: %s', request.data)
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
 
 
 class TokenVerifyAuthView(TokenVerifyView):
@@ -118,6 +109,7 @@ class TokenRefreshCookieView(TokenRefreshView):
         old_access_token = request.COOKIES.pop('access_token', None)
         logger.debug('Refresh | Наличие токена доступа в запросе: %s',
                      bool(old_access_token))
+        logger.debug('Login | request.user: %s', request.user)
 
         refresh_token = request.COOKIES.get('refresh_token')
 
@@ -159,26 +151,3 @@ class LogoutView(APIView):
         logger.debug('Response COOKIES: %s', response.cookies)
 
         return response
-
-
-class AccountDeleteView(APIView):
-    def post(self, request: Request, *args, **kwargs):
-        pass
-
-
-class PasswordChangeView(APIView):
-    def post(self, request: Request, *args, **kwargs):
-        pass
-
-
-class ActivateAccountView(APIView):
-    def post(self, request: Request, *args, **kwargs):
-        pass
-
-
-class TestView(APIView):
-    # authentication_classes = []
-    # permission_classes = []
-
-    def post(self, request: Request, *args, **kwargs):
-        return Response(data={'status': 'OK'}, status=status.HTTP_200_OK)

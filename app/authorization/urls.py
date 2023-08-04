@@ -1,12 +1,13 @@
 from django.urls import path
 
-from app.authorization.views import (
+from app.authorization.views.account import (
     RegisterView,
-    TokenVerifyAuthView,
+    TestView,
+)
+from app.authorization.views.auth import (
     LoginView,
     TokenRefreshCookieView,
     LogoutView,
-    TestView,
 )
 
 

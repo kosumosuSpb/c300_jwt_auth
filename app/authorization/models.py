@@ -54,3 +54,7 @@ class UserData(AbstractUser):
 
     def __repr__(self):
         return f'[id: {self.pk}:{self.email}]'
+
+
+# class UserPermissions(models.Model):
+#     pass

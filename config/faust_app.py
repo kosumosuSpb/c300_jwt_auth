@@ -11,7 +11,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from config.settings import KAFKA_URL
-from app.authorization.user_service import UserService
+from app.authorization.services.user_service import UserService
 
 
 logger = logging.getLogger(__name__)
