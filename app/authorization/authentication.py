@@ -5,6 +5,8 @@ from rest_framework import exceptions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authentication import CSRFCheck
 
+from config.settings import SIMPLE_JWT
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,8 @@ class CookiesJWTAuthentication(JWTAuthentication):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user_model = get_user_model()
+        self.access_token_name = SIMPLE_JWT.get('AUTH_COOKIE')
+        self.refresh_token_name = SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
     def authenticate(self, request):
         logger.debug('CookiesJWTAuthentication | authenticate')
@@ -38,8 +42,8 @@ class CookiesJWTAuthentication(JWTAuthentication):
         if request.COOKIES:
             enforce_csrf(request)
 
-        access_token = request.COOKIES.get('access_token')
-        refresh = request.COOKIES.get('refresh_token')
+        access_token = request.COOKIES.get(self.access_token_name)
+        refresh = request.COOKIES.get(self.refresh_token_name)
         logger.debug('access: %s, refresh: %s', access_token, refresh)
 
         if access_token is None:

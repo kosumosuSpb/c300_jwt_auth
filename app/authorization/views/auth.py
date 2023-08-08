@@ -31,29 +31,8 @@ from config.settings import SIMPLE_JWT
 logger = logging.getLogger(__name__)
 
 
-class TokenVerifyAuthView(TokenVerifyView):
-    """Верифицирует токен и возвращает пользователя"""
-    def post(self, request, *args, **kwargs):
-        logger.debug('TokenVerifyAuthView - POST - request data: %s', request.data)
-
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except TokenError as e:
-            raise InvalidToken(e.args[0])
-
-        token = request.data.get('token')
-        logger.debug('serializer.validated_data: %s', serializer.validated_data)
-        if not token:
-            raise InvalidToken('Нет токена в запросе')
-
-        algorythm = SIMPLE_JWT.get('ALGORITHM')
-        secret_key = SIMPLE_JWT.get('SIGNING_KEY')
-        payload = jwt.decode(token, secret_key, algorithms=[algorythm, ])
-        logger.debug('PAYLOAD: %s', payload)
-
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+ACCESS_TOKEN = SIMPLE_JWT.get('AUTH_COOKIE')
+REFRESH_TOKEN = SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
 
 class LoginView(TokenObtainPairView):
@@ -62,8 +41,8 @@ class LoginView(TokenObtainPairView):
         """Получает токены через супер во время логина и перемещает их в куки"""
         logger.debug('Login | request: %s, request.data: %s', request, request.data)
 
-        old_access_token = request.COOKIES.pop('access_token', None)
-        old_refresh_token = request.COOKIES.pop('refresh_token', None)
+        old_access_token = request.COOKIES.pop(ACCESS_TOKEN, None)
+        old_refresh_token = request.COOKIES.pop(REFRESH_TOKEN, None)
         logger.debug('Login | Наличие токенов в запросе (access, refresh): %s, %s',
                      bool(old_access_token), bool(old_refresh_token))
 
@@ -106,17 +85,18 @@ class LoginView(TokenObtainPairView):
 class TokenRefreshCookieView(TokenRefreshView):
     """Класс для обновления токена доступа"""
     def post(self, request: Request, *args, **kwargs):
-        old_access_token = request.COOKIES.pop('access_token', None)
+        old_access_token = request.COOKIES.pop(ACCESS_TOKEN, None)
         logger.debug('Refresh | Наличие токена доступа в запросе: %s',
                      bool(old_access_token))
         logger.debug('Login | request.user: %s', request.user)
 
-        refresh_token = request.COOKIES.get('refresh_token')
+        refresh_token = request.COOKIES.get(REFRESH_TOKEN)
 
         if not refresh_token:
             logger.error('Refresh | В cookies нет refresh токена для обновления токена доступа!')
             return Response(status=status.HTTP_403_FORBIDDEN)
 
+        request.data._mutable = True
         request.data['refresh'] = refresh_token
         logger.debug('Refresh | Request.data: %s', request.data)
         response = super().post(request, *args, **kwargs)
