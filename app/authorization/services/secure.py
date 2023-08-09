@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 def set_access_to_cookie(response: Response, access_token: str) -> Response:
     """Устанавливает токен доступа в куки Response"""
     logger.debug('set_access_to_cookie')
+    if access_token is None:
+        logger.warning('Токен доступа равен None! Скорее всего что-то пошло не так')
 
     access_cookie = {
         'key': SIMPLE_JWT['AUTH_COOKIE'],
@@ -29,6 +31,8 @@ def set_access_to_cookie(response: Response, access_token: str) -> Response:
 def set_refresh_to_cookie(response: Response, refresh_token: str) -> Response:
     """Устанавливает токен обновления в куки Response"""
     logger.debug('set_refresh_to_cookie')
+    if refresh_token is None:
+        logger.warning('Токен обновления равен None! Скорее всего что-то пошло не так')
 
     refresh_cookie = {
         'key': SIMPLE_JWT['AUTH_COOKIE_REFRESH'],

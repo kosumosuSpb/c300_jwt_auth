@@ -1,8 +1,6 @@
 """
 Login, Logout, TokenRefresh
 """
-
-
 import logging
 
 import jwt
@@ -11,11 +9,9 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import status
 from rest_framework_simplejwt.views import (
-    TokenVerifyView,
     TokenObtainPairView,
     TokenRefreshView
 )
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from app.authorization.services.user_service import UserService
 from app.authorization.services.secure import (
@@ -37,7 +33,7 @@ REFRESH_TOKEN = SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
 class LoginView(TokenObtainPairView):
 
-    def post(self, request: Request, *args, **kwargs):
+    def post(self, request: Request, *args, **kwargs) -> Response:
         """Получает токены через супер во время логина и перемещает их в куки"""
         logger.debug('Login | request: %s, request.data: %s', request, request.data)
 
@@ -61,17 +57,6 @@ class LoginView(TokenObtainPairView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        access_changed = old_access_token != access_token
-        refresh_changed = old_refresh_token != refresh_token
-        if not all([access_changed, refresh_changed]):
-            logger.error('Не изменился один из токенов! '
-                         'Access изменился: %s, Refresh изменился: %s',
-                         access_changed, refresh_changed)
-            return Response(
-                data={'reason': 'Токены не обновились'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
         response = set_access_to_cookie(response, access_token)
         response = set_refresh_to_cookie(response, refresh_token)
         response = set_csrf(response, request)
@@ -84,7 +69,7 @@ class LoginView(TokenObtainPairView):
 
 class TokenRefreshCookieView(TokenRefreshView):
     """Класс для обновления токена доступа"""
-    def post(self, request: Request, *args, **kwargs):
+    def post(self, request: Request, *args, **kwargs) -> Response:
         old_access_token = request.COOKIES.pop(ACCESS_TOKEN, None)
         logger.debug('Refresh | Наличие токена доступа в запросе: %s',
                      bool(old_access_token))
@@ -101,17 +86,25 @@ class TokenRefreshCookieView(TokenRefreshView):
         logger.debug('Refresh | Request.data: %s', request.data)
         response = super().post(request, *args, **kwargs)
 
-        access_token = response.data.pop('access', None)
+        new_access_token = response.data.pop('access', None)
 
-        if not access_token:
+        if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
+            new_refresh_token = response.data.pop('access', None)
+            if new_refresh_token:
+                response = set_refresh_to_cookie(response, new_refresh_token)
+            else:
+                logger.error('Refresh | В ответе нет токена доступа!')
+                return Response(data={'reason': 'Нет токена доступа'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        if not new_access_token:
             logger.error('Refresh | В ответе нет токена доступа!')
-            return Response(data={'reason': 'Нет токена доступа'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                data={'reason': 'Нет токена доступа'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        if old_access_token == access_token:
-            logger.error('Refresh | Токен не обновился!')
-            return Response(data={'reason': 'Токен не обновился'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        response = set_access_to_cookie(response, access_token)
+        response = set_access_to_cookie(response, new_access_token)
 
         data = {'action': 'REFRESH', 'status': 'OK'}
         response.data.update(data)
@@ -120,7 +113,7 @@ class TokenRefreshCookieView(TokenRefreshView):
 
 
 class LogoutView(APIView):
-    def post(self, request: Request, *args, **kwargs):
+    def post(self, request: Request, *args, **kwargs) -> Response:
         logger.debug('Logout')
         response = Response(
             data={'action': 'LOGOUT', 'status': 'OK'},

@@ -10,6 +10,7 @@ class UserManager(BaseUserManager):
             raise ValueError('Email is Required')
         user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
+        user.full_clean()
         user.save(using=self._db)
         return user
 
@@ -33,8 +34,9 @@ class UserData(AbstractUser):
     REQUIRED_FIELDS = ['name']
 
     # BASE FIELDS
-    # username
-    name = models.CharField(max_length=100, unique=True)
+    username = None  # поле удалено
+    # password = models.CharField(_("password"), max_length=128)  # наследовано
+    # name = models.CharField(max_length=100, unique=False)  # поле удалено
     email = models.EmailField(max_length=100, unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
@@ -46,14 +48,18 @@ class UserData(AbstractUser):
     is_superuser = models.BooleanField(default=False)
 
     # ADDITIONAL FIELDS
-    type = models.CharField(max_length=25, choices=[('T', 'Tenant'), ('W', 'Worker')])
-    number = models.CharField(max_length=13, null=True)
+    type = models.CharField(max_length=25, choices=[('T', 'Tenant'), ('W', 'Worker')], blank=True, null=True)
+    number = models.CharField(max_length=13, null=True, blank=True)
+
+    @property
+    def full_name(self):
+        return self.get_full_name()
 
     def __str__(self):
-        return f'[id: {self.pk}:{self.email}]'
+        return f'[{self.pk}:{self.email}]'
 
     def __repr__(self):
-        return f'[id: {self.pk}:{self.email}]'
+        return f'[{self.pk}:{self.email}]'
 
 
 # class UserPermissions(models.Model):

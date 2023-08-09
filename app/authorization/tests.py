@@ -1,10 +1,12 @@
 import logging
 
 import requests
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.test import Client, TestCase
+from rest_framework.response import Response
 
 from app.authorization.models import UserData
+from app.authorization.services.user_service import UserService
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 
 
@@ -28,25 +30,34 @@ class TestAccount(TestCase):
         cls.csrf_token_name = CSRF_COOKIE_NAME
         cls.csrf_headers_name = CSRF_HEADERS_NAME
 
-    def _login(self) -> requests.Response:
+    def _login(self, client: Client | None = None) -> Response:
+        """
+        Делает логин
+
+        :param client: Тестовый клиент для теста эндпоинта.
+            Нужен для того, чтобы можно было создать,
+            например Client(enforce_csrf_checks=True) и передать сюда
+        :return: Response
+        """
         data = {'email': self.email, 'password': self.password}
         headers = {"accept": "application/json"}
-        response = self.client.post(self.login_url, data=data, headers=headers)
+        client = client or self.client
+        response = client.post(self.login_url, data=data, headers=headers)
         return response
 
     def setUp(self) -> None:
-        logger.debug('Создание тестового пользователя')
+        logger.debug('setUp | Создание тестового пользователя')
         UserData.objects.create_user(self.email, self.password)
         self.client = Client()
 
     def tearDown(self) -> None:
-        logger.info('tearDown')
+        logger.debug('tearDown | Удаление тестового пользователя')
         try:
             user: UserData = UserData.objects.get(email=self.email)
         except ObjectDoesNotExist as e:
-            logger.info('Пользователь %s не найден', self.email)
+            logger.debug('Пользователь %s не найден', self.email)
         else:
-            logger.info('Пользователь %s найден, удаляем', self.email)
+            logger.debug('Пользователь %s найден, удаляем', self.email)
             user.delete()
 
     def test_login(self):
@@ -72,15 +83,18 @@ class TestAccount(TestCase):
         cookies = {self.refresh_token_name: refresh_token}
         response = self.client.post(self.refresh_url, cookies=cookies)
         new_access_token = response.cookies.get(self.access_token_name)
-        # new_refresh_token = response.cookies.get(self.refresh_token_name)
-
         self.assertNotEqual(access_token, new_access_token)
-        # self.assertNotEqual(refresh_token, new_refresh_token)
+
+        if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
+            logger.debug('ROTATE_REFRESH_TOKENS is True, check refresh token')
+            new_refresh_token = response.cookies.get(self.refresh_token_name)
+            self.assertNotEqual(refresh_token, new_refresh_token)
 
     def test_logout(self):
         logger.debug('test_logout')
         response = self._login()
         self.assertEquals(200, response.status_code)
+
         access_token = response.cookies.get(self.access_token_name)
         csrf_token = response.cookies.get(self.csrf_token_name)
 
@@ -109,13 +123,49 @@ class TestAccount(TestCase):
         expected_empty_access_token = f'{self.access_token_name}=""'
         self.assertIn(expected_empty_access_token, cookies_access_token)
 
+    def test_login_invalid_email(self):
+        logger.debug('test_invalid_email')
+        data = {'email': 'some_invalid@email.com', 'password': self.password}
+        headers = {"accept": "application/json"}
+        response = self.client.post(self.login_url, data=data, headers=headers)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_login_invalid_password(self):
+        logger.debug('test_invalid_password')
+        data = {'email': self.email, 'password': self.password + 'h'}
+        headers = {"accept": "application/json"}
+        response = self.client.post(self.login_url, data=data, headers=headers)
+
+        self.assertEqual(401, response.status_code)
+
+    # def test_login_logout_login(self):
+    #     pass
+
+    def test_create_already_created_user(self):
+        logger.debug('test_register_already_registered_user')
+        with self.assertRaises(ValidationError):
+            UserService.create_user(self.email, self.password)
+
+    def test_create_user_with_wrong_email(self):
+        logger.debug('test_create_user_with_wrong_email')
+        with self.assertRaises(ValidationError):
+            UserService.create_user('some_another', 'PassWord_672')
+
+    def test_create_another_user(self):
+        logger.debug('test_create_another_user')
+        user = UserService.create_user('some_another@mail.ne')
+        self.assertIsInstance(user, UserData)
+
+    def test_csrf_token_in_cookies(self):
+        logger.debug('test_csrf_token_in_cookies_and_headers')
+        response = self._login()
+
+        csrf_token_cookies = response.cookies.get(self.csrf_token_name)
+        self.assertIsNotNone(csrf_token_cookies)
+
     # def test_user_delete(self):
     #     pass
     #
     # def test_visit_test_view(self):
     #     pass
-    #
-    # def test_register_new_user(self):
-    #     pass
-    #
-

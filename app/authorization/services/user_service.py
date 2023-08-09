@@ -1,4 +1,5 @@
 import logging
+import random
 
 import jwt
 from django.core.exceptions import ObjectDoesNotExist
@@ -16,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 class UserService:
     """Управление пользователем"""
-    def __init__(self, user: str | int):
-        self.user: UserData = self.get_user(user)
+    def __init__(self, user_id_or_token: str | int):
+        self.user: UserData = self.get_user(user_id_or_token)
 
     @classmethod
     def get_user(cls, user_id_or_token: str | int) -> UserData | None:
@@ -49,6 +50,42 @@ class UserService:
             logging.error('Ошибка токена: %s', ve)
             return False
         return True
+
+    @classmethod
+    def create_user(
+            cls,
+            email: str,
+            password: str | None = None,
+            number: str | None = None,
+            type_=None,
+            **extra_fields
+    ) -> UserData:
+        """Создание пользователя"""
+        if not number:
+            number = cls._get_number()
+
+        user = UserData.objects.create_user(
+            email=email,
+            password=password,
+            number=number,
+            type=type_,
+            **extra_fields
+        )
+
+        return user
+
+    @staticmethod
+    def _get_number() -> str:
+        """Временная реализация метода получения номера для пользователя"""
+        while True:
+            number = random.randint(1000000000, 9999999999)
+            number = str(number)
+
+            try:
+                UserData.objects.get(number=number)
+            except ObjectDoesNotExist:
+                break
+        return number
 
     def del_user(self):
         """Удаление текущего пользователя"""
