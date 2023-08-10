@@ -4,6 +4,7 @@ Login, Logout, TokenRefresh
 import logging
 
 import jwt
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -20,7 +21,6 @@ from app.authorization.services.secure import (
     set_csrf,
     del_auth_cookies,
 )
-from app.authorization.serializers import UserSerializer
 from config.settings import SIMPLE_JWT
 
 
@@ -43,7 +43,7 @@ class LoginView(TokenObtainPairView):
                      bool(old_access_token), bool(old_refresh_token))
 
         response: Response = super().post(request, *args, **kwargs)
-        logger.debug('Login | Response data (обновлённые токены): %s',
+        logger.debug('Login | Response data (новые токены): %s',
                      response.data)
 
         access_token = response.data.pop('access', None)
@@ -79,22 +79,26 @@ class TokenRefreshCookieView(TokenRefreshView):
 
         if not refresh_token:
             logger.error('Refresh | В cookies нет refresh токена для обновления токена доступа!')
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response(data={'reason': 'Нет токена обновления!'}, status=status.HTTP_403_FORBIDDEN)
 
-        request.data._mutable = True
+        # тесты без этого падают, потому что не дают делать изменения в Request
+        if hasattr(request.data, '_mutable'):
+            request.data._mutable = True
+
         request.data['refresh'] = refresh_token
-        logger.debug('Refresh | Request.data: %s', request.data)
+        logger.debug('Refresh | Пришло: Request.data: %s', request.data)
         response = super().post(request, *args, **kwargs)
 
+        logger.debug('Refresh | Ответ от simplejwt: Response.data: %s', response.data)
         new_access_token = response.data.pop('access', None)
 
         if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
-            new_refresh_token = response.data.pop('access', None)
+            new_refresh_token = response.data.pop('refresh', None)
             if new_refresh_token:
                 response = set_refresh_to_cookie(response, new_refresh_token)
             else:
-                logger.error('Refresh | В ответе нет токена доступа!')
-                return Response(data={'reason': 'Нет токена доступа'},
+                logger.error('Refresh | В ответе нет токена обновления!')
+                return Response(data={'reason': 'Нет токена обновления'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if not new_access_token:

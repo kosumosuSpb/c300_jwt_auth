@@ -33,13 +33,19 @@ class UserData(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
 
+    TYPE_CHOICES = (
+        ('worker', 'Worker'),
+        ('tenant', 'Tenant'),
+        ('organization', 'Organization'),
+    )
+
     # BASE FIELDS
     username = None  # поле удалено
     # password = models.CharField(_("password"), max_length=128)  # наследовано
     # name = models.CharField(max_length=100, unique=False)  # поле удалено
     email = models.EmailField(max_length=100, unique=True)
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
+    first_name = models.CharField(max_length=150, blank=True, null=True)
+    last_name = models.CharField(max_length=150, blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
 
     is_admin = models.BooleanField(default=False)
@@ -48,7 +54,7 @@ class UserData(AbstractUser):
     is_superuser = models.BooleanField(default=False)
 
     # ADDITIONAL FIELDS
-    type = models.CharField(max_length=25, choices=[('T', 'Tenant'), ('W', 'Worker')], blank=True, null=True)
+    type = models.CharField(max_length=25, choices=TYPE_CHOICES, blank=True, null=True)
     number = models.CharField(max_length=13, null=True, blank=True)
 
     @property
@@ -60,7 +66,3 @@ class UserData(AbstractUser):
 
     def __repr__(self):
         return f'[{self.pk}:{self.email}]'
-
-
-# class UserPermissions(models.Model):
-#     pass

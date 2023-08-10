@@ -1,9 +1,14 @@
+import sys
 import logging
+from http.cookies import Morsel
 
 import requests
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.test import Client, TestCase
+from django.db.models.query import QuerySet
+from django.test import Client, TestCase, tag
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from app.authorization.models import UserData
 from app.authorization.services.user_service import UserService
@@ -44,6 +49,40 @@ class TestAccount(TestCase):
         client = client or self.client
         response = client.post(self.login_url, data=data, headers=headers)
         return response
+
+    @staticmethod
+    def _get_value_from_morsel_cookie(cookie: Morsel):
+        """Извлечение значения из типа http.cookies.Morsel"""
+        assert isinstance(cookie, Morsel), 'Пришёл не верный класс, должен быть Morsel'
+        assert hasattr(cookie, '_value'), 'У объекта нет поля _value!'
+        return cookie._value
+
+    def _get_tokens_from_response_cookies(self, response: Response, as_tuple=False) -> dict | tuple:
+        """
+        Вытаскивает токены из Response
+
+        :param response: Response object
+        :param as_tuple: Флаг для возможности вывести кортежем
+        :return: dict {access_token: access_token, ...} или кортеж (access, refresh, csrf)
+        """
+        access_token = response.cookies.get(self.access_token_name)
+        access_token = self._get_value_from_morsel_cookie(access_token)
+
+        refresh_token = response.cookies.get(self.refresh_token_name)
+        refresh_token = self._get_value_from_morsel_cookie(refresh_token)
+
+        csrf_token = response.cookies.get(self.csrf_token_name)
+        csrf_token = self._get_value_from_morsel_cookie(csrf_token)
+
+        if as_tuple:
+            tokens = (access_token, refresh_token, csrf_token)
+        else:
+            tokens = {
+                self.access_token_name: access_token,
+                self.refresh_token_name: refresh_token,
+                self.csrf_token_name: csrf_token
+            }
+        return tokens
 
     def setUp(self) -> None:
         logger.debug('setUp | Создание тестового пользователя')
@@ -164,8 +203,52 @@ class TestAccount(TestCase):
         csrf_token_cookies = response.cookies.get(self.csrf_token_name)
         self.assertIsNotNone(csrf_token_cookies)
 
-    # def test_user_delete(self):
-    #     pass
-    #
-    # def test_visit_test_view(self):
-    #     pass
+    @tag('blacklist')
+    def test_add_refresh_to_outstanding_db(self):
+        """Тест на добавление рефреш токена в БД"""
+        logger.debug('test_add_refresh_to_outstanding_db')
+
+        start_blacklist = 'blacklist' in str(sys.argv)
+        if not start_blacklist:
+            skip_msg = 'Тест test_add_refresh_to_outstanding_db пропущен из за условия'
+            logger.debug(skip_msg)
+            self.skipTest(skip_msg)
+
+        response = self._login()
+
+        tokens = self._get_tokens_from_response_cookies(response)
+        refresh_token = tokens.get(self.refresh_token_name)
+        # logger.debug('refresh_token: %s', refresh_token)
+        self.assertTrue(bool(refresh_token), 'Рефреш токена нет в ответе от логина!')
+
+        queryset: QuerySet = OutstandingToken.objects.filter(token=refresh_token)
+        self.assertTrue(queryset.exists(), 'Рефреш токена в БД нет!')
+        self.assertEqual(1, queryset.count(), 'Нашлось больше одного объекта с этим токеном!')
+
+    @tag('blacklist')
+    def test_add_refresh_to_blacklist_db(self):
+        """Тест на добавление рефреш токена в блеклист после рефреша"""
+        logger.debug('test_add_refresh_to_blacklist_db')
+
+        start_blacklist = 'blacklist' in str(sys.argv)
+        if not start_blacklist:
+            skip_msg = 'Тест test_add_refresh_to_blacklist_db пропущен из за условия'
+            logger.debug(skip_msg)
+            self.skipTest(skip_msg)
+
+        response = self._login()
+        tokens = self._get_tokens_from_response_cookies(response)
+        refresh_token = tokens.get(self.refresh_token_name)
+
+        cookies = {self.refresh_token_name: refresh_token}
+        response = self.client.post(self.refresh_url, cookies=cookies)
+
+        outstanding_qs = OutstandingToken.objects.filter(token=refresh_token)
+        self.assertTrue(outstanding_qs.exists(), 'Рефреш токена в БД нет!')
+        self.assertEqual(1, outstanding_qs.count(), 'Нашлось больше одного объекта с этим токеном!')
+        outstanding_id = outstanding_qs.get()
+
+        blacklist_qs = BlacklistedToken.objects.filter(token_id=outstanding_id)
+
+        self.assertTrue(blacklist_qs.exists(), 'Рефреш токена нет в блоклисте!')
+        self.assertEqual(1, blacklist_qs.count(), 'Нашлось больше одного объекта токена с этим id!')
