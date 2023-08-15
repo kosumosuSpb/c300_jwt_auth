@@ -8,11 +8,20 @@ from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
-from app.authorization.models import UserData
+from app.authorization.models import (
+    UserData,
+    OrganizationProfile,
+    TenantProfile,
+    WorkerProfile
+)
 from config.settings import SIMPLE_JWT
 
 
 logger = logging.getLogger(__name__)
+
+
+class UserServiceException(Exception):
+    pass
 
 
 class UserService:
@@ -32,6 +41,7 @@ class UserService:
         return user_model
 
     def get_permissions(self):
+        """Возвращает права пользователя. Демонстрационно: в реальности пока бесполезно"""
         permissions_set = self.user.get_user_permissions()
         permissions = {perm: self.user.has_perm(perm) for perm in permissions_set}
 
@@ -54,10 +64,10 @@ class UserService:
     @classmethod
     def create_user(
             cls,
+            user_type: str,
             email: str,
             password: str | None = None,
             number: str | None = None,
-            type_=None,
             **extra_fields
     ) -> UserData:
         """Создание пользователя"""
@@ -68,15 +78,53 @@ class UserService:
             email=email,
             password=password,
             number=number,
-            type=type_,
+            type=user_type,
             **extra_fields
         )
+        logger.debug('Created user: %s', user)
+
+        profile = cls.create_user_profile(user)
+        logger.debug('Created profile: %s', profile)
 
         return user
 
+    @classmethod
+    def create_user_profile(cls, user: UserData, *args, **kwargs):
+        """Создание профиля пользователя в зависимости от типа"""
+        if user.type == UserData.ORG:
+            profile = cls.create_profile_organization(user, *args, **kwargs)
+        elif user.type == UserData.TENANT:
+            profile = cls.create_profile_tenant(user, *args, **kwargs)
+        elif user.type == UserData.WORKER:
+            profile = cls.create_profile_worker(user, *args, **kwargs)
+        else:
+            msg = 'Указан не верный тип профиля пользователя!'
+            logger.error(msg)
+            raise UserServiceException(msg)
+
+        return profile
+
+    @staticmethod
+    def create_profile_organization(user: UserData, *args, **kwargs) -> OrganizationProfile:
+        """Создание профиля организации"""
+        organization = OrganizationProfile.objects.create(user=user, *args, **kwargs)
+        return organization
+
+    @staticmethod
+    def create_profile_tenant(user: UserData, *args, **kwargs) -> TenantProfile:
+        """Создание профиля жителя"""
+        tenant = TenantProfile.objects.create(user=user, *args, **kwargs)
+        return tenant
+
+    @staticmethod
+    def create_profile_worker(user: UserData, *args, **kwargs) -> WorkerProfile:
+        """Создание профиля сотрудника"""
+        worker = WorkerProfile.objects.create(user=user, *args, **kwargs)
+        return worker
+
     @staticmethod
     def _get_number() -> str:
-        """Временная реализация метода получения номера для пользователя"""
+        """Временная реализация метода получения уникального номера для пользователя"""
         while True:
             number = random.randint(1000000000, 9999999999)
             number = str(number)
