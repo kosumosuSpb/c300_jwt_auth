@@ -27,6 +27,20 @@
 
     pip install -r requirements.txt
 
+### Настройки окружения
+
+Нужно создать файл `.env` с содержимым: 
+
+    DEBUG=
+    DJANGO_SETTINGS_MODULE=config.settings
+    SECRET_KEY=
+    
+    DB_NAME=postgres
+    DB_USERNAME=postgres
+    DB_HOST=localhost
+    DB_PORT=5432
+    DB_PASS=example
+
 ### Тестовый запуск Django
 
     python manage.py runserver  # Запустится на 127.0.0.1:8000
