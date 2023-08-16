@@ -12,6 +12,7 @@
 * Faust-streaming 0.10.14
 * zookeeper + kafka в докере 
 * python-kafka 2.0.2
+* PostgreSQL (https://hub.docker.com/_/postgres)
 
 
 ### Создание виртуального окружения

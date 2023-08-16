@@ -2,6 +2,7 @@
 **/.venv
 **/.env
 /c300_requirements
+/.db_temp
 
 **/*.sqlite*
 /*-data/
