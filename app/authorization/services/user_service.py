@@ -1,5 +1,6 @@
 import logging
 import random
+import datetime
 
 import jwt
 from django.core.exceptions import ObjectDoesNotExist
@@ -74,29 +75,40 @@ class UserService:
         if not number:
             number = cls._get_number()
 
+        is_admin = extra_fields.get('is_admin', False)
+        is_staff = extra_fields.get('is_staff', False)
+        is_superuser = extra_fields.get('is_superuser', False)
+
         user = UserData.objects.create_user(
             email=email,
             password=password,
             number=number,
             type=user_type,
-            **extra_fields
+            phones={},
+            comment='',
+            avatar=None,
+            inn=None,
+            is_admin=is_admin,
+            is_active=False,
+            is_staff=is_staff,
+            is_superuser=is_superuser
         )
         logger.debug('Created user: %s', user)
 
-        profile = cls.create_user_profile(user)
+        profile = cls.create_user_profile(user, **extra_fields)
         logger.debug('Created profile: %s', profile)
 
         return user
 
     @classmethod
-    def create_user_profile(cls, user: UserData, *args, **kwargs):
+    def create_user_profile(cls, user: UserData, **kwargs):
         """Создание профиля пользователя в зависимости от типа"""
         if user.type == UserData.ORG:
-            profile = cls.create_profile_organization(user, *args, **kwargs)
+            profile = cls.create_profile_organization(user, **kwargs)
         elif user.type == UserData.TENANT:
-            profile = cls.create_profile_tenant(user, *args, **kwargs)
+            profile = cls.create_profile_tenant(user, **kwargs)
         elif user.type == UserData.WORKER:
-            profile = cls.create_profile_worker(user, *args, **kwargs)
+            profile = cls.create_profile_worker(user, **kwargs)
         else:
             msg = 'Указан не верный тип профиля пользователя!'
             logger.error(msg)
@@ -105,28 +117,74 @@ class UserService:
         return profile
 
     @staticmethod
-    def create_profile_organization(user: UserData, *args, **kwargs) -> OrganizationProfile:
+    def create_profile_organization(
+            user: UserData,
+            org_name: str,
+            **kwargs
+    ) -> OrganizationProfile:
         """Создание профиля организации"""
-        organization = OrganizationProfile.objects.create(user=user, *args, **kwargs)
+        address = kwargs.get('org_address')
+        bank_details = kwargs.get('bank_detailes')
+        organization = OrganizationProfile.objects.create(
+            user=user,
+            name=org_name,
+            address=address,
+            bank_details=bank_details,
+            **kwargs
+        )
         return organization
 
     @staticmethod
-    def create_profile_tenant(user: UserData, *args, **kwargs) -> TenantProfile:
+    def create_profile_tenant(
+            user: UserData,
+            first_name: str,
+            last_name: str,
+            surname=None,
+            **kwargs
+    ) -> TenantProfile:
         """Создание профиля жителя"""
-        tenant = TenantProfile.objects.create(user=user, *args, **kwargs)
+        tenant = TenantProfile.objects.create(
+            user=user,
+            first_name=first_name,
+            last_name=last_name,
+            surname=surname,
+            **kwargs
+        )
         return tenant
 
     @staticmethod
-    def create_profile_worker(user: UserData, *args, **kwargs) -> WorkerProfile:
+    def create_profile_worker(
+            user: UserData,
+            first_name: str,
+            last_name: str,
+            birth_date: datetime.datetime,
+            sex: str,
+            company: OrganizationProfile,
+            surname=None,
+            **kwargs
+    ) -> WorkerProfile:
         """Создание профиля сотрудника"""
-        worker = WorkerProfile.objects.create(user=user, *args, **kwargs)
+        worker = WorkerProfile.objects.create(
+            user=user,
+            first_name=first_name,
+            last_name=last_name,
+            surname=surname,
+            company=company,
+            birth_date=birth_date,
+            sex=sex,
+            **kwargs
+        )
         return worker
+
+    def update_email(self):
+        """Обновление (изменение) адреса электронной почты"""
+        pass
 
     @staticmethod
     def _get_number() -> str:
         """Временная реализация метода получения уникального номера для пользователя"""
         while True:
-            number = random.randint(1000000000, 9999999999)
+            number = random.randint(1000000000000, 9999999999999)
             number = str(number)
 
             try:

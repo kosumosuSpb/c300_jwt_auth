@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-# from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField
 
 
 class UserManager(BaseUserManager):
@@ -64,7 +64,6 @@ class UserData(AbstractUser):
         null=True,
         verbose_name='Список телефонных номеров'
     )
-    # profile  # one-to-many
 
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)  # аналог has_access из с300
@@ -94,8 +93,8 @@ class UserData(AbstractUser):
     inn = models.CharField(max_length=12, null=True, blank=True, verbose_name='ИНН')  # ИНН, от 10 до 12 цифр
 
     # COMPATIBILITY FIELDS
-    # get_access_date = models.DateTimeField(null=True, blank=True)
-    # old_numbers = ArrayField(models.CharField)  # поле только для PostgreSQL
+    get_access_date = models.DateTimeField(null=True, blank=True)
+    old_numbers = ArrayField(models.CharField(max_length=13, blank=True), blank=True, null=True)  # поле только для PostgreSQL
     is_deleted = models.BooleanField(default=False)
     additional_email = models.EmailField(
         max_length=100,
@@ -126,10 +125,10 @@ class UserData(AbstractUser):
         )
 
     def __str__(self):
-        return f'[{self.pk}:{self.email}]'
+        return f'[user:{self.pk}:{self.email}]'
 
     def __repr__(self):
-        return f'[{self.pk}:{self.email}]'
+        return f'[user:{self.pk}:{self.email}]'
 
 
 class OrganizationProfile(models.Model):
@@ -156,6 +155,9 @@ class OrganizationProfile(models.Model):
     def __repr__(self):
         return f'[Org:{self.pk}:{self.name}]'
 
+    def __str__(self):
+        return f'[Org:{self.pk}:{self.name}]'
+
 
 class HumanBaseProfile(models.Model):
     class Meta:
@@ -168,7 +170,7 @@ class HumanBaseProfile(models.Model):
 
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия')
-    surname = models.CharField(max_length=50, verbose_name='Отчество')
+    surname = models.CharField(max_length=50, verbose_name='Отчество', blank=True, null=True)
     birth_date = models.DateTimeField(verbose_name="Дата рождения")
     sex = models.CharField(max_length=10, choices=GENDER_TYPE_CHOICES, verbose_name="Пол")
     #
@@ -228,6 +230,10 @@ class WorkerProfile(HumanBaseProfile):
 
 
 class TenantProfile(HumanBaseProfile):
+    """Житель-человек"""
+    # TODO: но жителем и владельцем помещения может быть и организация
+    # TODO: добавить сохранение платёжных данных
+
     user = models.OneToOneField(
         UserData,
         on_delete=models.PROTECT,
@@ -259,7 +265,11 @@ class TenantProfile(HumanBaseProfile):
 
     # AREA
     area = models.CharField(max_length=255, blank=True, null=True)
-    # rooms = ArrayField(models.CharField)  # только для PostgreSQL
+    rooms = ArrayField(
+        models.CharField(max_length=11, blank=True),
+        blank=True,
+        null=True
+    )  # только для PostgreSQL
 
     # MEMBERSHIP
     coop_member_date_from = models.DateTimeField(
@@ -279,6 +289,12 @@ class TenantProfile(HumanBaseProfile):
         verbose_name='Отключено ли получение рассылки'
     )
     disable_paper_bills = models.BooleanField(default=False)
+    family = models.ManyToManyField(
+        'TenantProfile',
+        on_delete=models.SET_NULL,
+        related_name='family',
+        verbose_name='Семья'
+    )  # те, кто живёт в той же квартире?
 
     @property
     def is_coop_member(self):
@@ -291,11 +307,12 @@ class TenantProfile(HumanBaseProfile):
     def __str__(self):
         return f'[tenant:{self.pk}:{self.first_name} {self.last_name[:1]}.]'
 
+    #
+
     # coefs = EmbeddedDocumentListField(
     #     Coef,
     #     verbose_name='Значения квартирных коэффициентов',
     # )
-    # family = EmbeddedDocumentField(FamilyRelations, verbose_name='Семья')
     # statuses = EmbeddedDocumentField(
     #     Statuses,
     #     default=Statuses(),
@@ -411,3 +428,13 @@ class TenantProfile(HumanBaseProfile):
     # update_offsets_at = DateTimeField()
     # task = DictField()
     # modified_at = DateTimeField()
+
+
+# class Permission(models.Model):
+#     name = models.CharField(max_length=255, unique=True)
+#     description = models.CharField(max_length=255)
+#     #
+#     create = models.BooleanField(default=False)
+#     read = models.BooleanField(default=False)
+#     update = models.BooleanField(default=False)
+#     delete = models.BooleanField(default=False)
