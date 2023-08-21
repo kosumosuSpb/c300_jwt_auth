@@ -1,19 +1,26 @@
 from django.db import models
 
-from app.authorization.models.profiles import OrganizationProfile, TenantProfile
+from app.authorization.models import CompanyProfile, TenantProfile
 
 
 class HouseGroup(models.Model):
-    """"""
+    """Группа домов"""
     name = models.CharField(max_length=100)
-    # organization =
+    company = models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.SET_NULL,
+        related_name='house_groups',
+        null=True
+    )
 
 
 class House(models.Model):
-    """"""
+    """Дом"""
     zip_code = models.CharField(max_length=6)
     city = models.CharField(max_length=255)
     street = models.CharField(max_length=255)
+    number = models.CharField(max_length=10)
+    letter = models.CharField(max_length=5)
     house_group = models.ForeignKey(
         HouseGroup,
         on_delete=models.CASCADE,
@@ -22,7 +29,7 @@ class House(models.Model):
 
 
 class Area(models.Model):
-    """"""
+    """Помещение"""
     number = models.CharField(max_length=50)
     house = models.ForeignKey(
         House,
@@ -37,20 +44,26 @@ class Area(models.Model):
 
 
 class Owner(models.Model):
-    """Профиль владельца помещения"""
+    """
+    Профиль владельца помещения
+
+    По сути представляет собой кастомную промежуточную таблицу M2M
+    """
     part = models.FloatField(default=1.0, verbose_name='Доля владения помещением')
     area = models.ForeignKey(
         Area,
         on_delete=models.CASCADE,
         related_name='owners'
     )
-    organization_owner = models.ForeignKey(
-        OrganizationProfile,
+    company_owner = models.ForeignKey(
+        CompanyProfile,
         on_delete=models.SET_NULL,
-        related_name='owner_areas'
+        related_name='owner_areas',
+        null=True
     )
     tenant_owner = models.ForeignKey(
         TenantProfile,
         on_delete=models.SET_NULL,
-        related_name='owner_areas'
+        related_name='owner_areas',
+        null=True
     )

@@ -1,6 +1,11 @@
+import logging
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
+
+
+logger = logging.getLogger(__name__)
 
 
 class UserManager(BaseUserManager):
@@ -71,12 +76,6 @@ class UserData(AbstractUser):
     is_superuser = models.BooleanField(default=False)
 
     # ADDITIONAL FIELDS
-    type = models.CharField(
-        max_length=25,
-        choices=TYPE_CHOICES,
-        blank=True,
-        null=True
-    )
     number = models.CharField(
         max_length=13,
         null=True,
@@ -109,24 +108,40 @@ class UserData(AbstractUser):
     )
 
     @property
+    def type(self) -> list:
+        """Возвращает тип пользователя"""
+        types = []
+        if hasattr(self, 'company_profile'):
+            types.append(self.ORG)
+        if hasattr(self, 'worker_profile'):
+            types.append(self.WORKER)
+        if hasattr(self, 'tenant_profile'):
+            types.append(self.TENANT)
+        return types
+
+    @property
     def full_name(self):
         return self.get_full_name()
 
     def get_full_name(self):
+        assert len(self.profile) > 0, 'Пользователь не связан ни с одним профилем (такого не должно быть)!'
         if self.type in (self.WORKER, self.TENANT):
-            return self.profile.first_name + ' ' + self.profile.last_name
+            return self.profile[0].first_name + ' ' + self.profile[0].last_name
         elif self.type == self.ORG:
-            return self.profile.name
+            return self.profile[0].name
 
     @property
-    def profile(self):
-        """Возвращает профиль пользователя в зависимости от его типа"""
-        return (
-            self.organization_profile if self.type == self.ORG else
-            self.worker_profile if self.type == self.WORKER else
-            self.tenant_profile if self.type == self.TENANT else
-            None
-        )
+    def profile(self) -> list:
+        """Возвращает профили пользователя"""
+        profiles = []
+        if hasattr(self, 'company_profile'):
+            profiles.append(self.company_profile)
+        if hasattr(self, 'worker_profile'):
+            profiles.append(self.worker_profile)
+        if hasattr(self, 'tenant_profile'):
+            profiles.append(self.tenant_profile)
+        logger.debug('Профили пользователя %s: %s', self, profiles)
+        return profiles
 
     def __str__(self):
         return f'[user:{self.pk}:{self.email}]'

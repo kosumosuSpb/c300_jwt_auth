@@ -1,14 +1,15 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-from app.authorization.models.user_data import UserData
+from app.authorization.models import UserData
 
 
-class OrganizationProfile(models.Model):
+class CompanyProfile(models.Model):
+    """Профиль компании"""
     user = models.OneToOneField(
         UserData,
         on_delete=models.PROTECT,
-        related_name='organization_profile'
+        related_name='company_profile'
     )
     name = models.CharField(max_length=100, verbose_name='Название организации')
 
@@ -23,6 +24,7 @@ class OrganizationProfile(models.Model):
         null=True
     )
     # departments
+    # house_groups
     # owner_areas
 
     def __repr__(self):
@@ -33,13 +35,14 @@ class OrganizationProfile(models.Model):
 
 
 class Department(models.Model):
-    """Отдел в организации"""
+    """Отдел в компании"""
     name = models.CharField(max_length=255)
-    organization = models.ForeignKey(
-        OrganizationProfile,
+    company = models.ForeignKey(
+        CompanyProfile,
         on_delete=models.CASCADE,
         related_name='departments'
     )
+    # workers
 
 
 class HumanBaseProfile(models.Model):
@@ -98,15 +101,15 @@ class WorkerProfile(HumanBaseProfile):
     )
     position = models.CharField(max_length=75, verbose_name='Должность')
     department = models.ForeignKey(
-        OrganizationProfile,
+        Department,
         on_delete=models.PROTECT,
         related_name='workers',
         verbose_name='Отдел в компании, в которой работает сотрудник'
     )
 
     @property
-    def organization(self):
-        return self.department.organization.pk
+    def company(self):
+        return self.department.company.pk
 
     def __repr__(self):
         return f'[worker:{self.pk}:{self.first_name} {self.last_name[:1]}.]'
@@ -150,34 +153,33 @@ class TenantProfile(HumanBaseProfile):
     )
     # owners_areas
 
-    # MEMBERSHIP
-    coop_member_date_from = models.DateTimeField(
-        verbose_name='Дата принятия в члены ТСЖ/ЖСК',
-        default=None,
-        blank=True,
-        null=True
-    )
+    # MEMBERSHIP - возможно вообще не нужно?
+    # coop_member_date_from = models.DateTimeField(
+    #     verbose_name='Дата принятия в члены ТСЖ/ЖСК',
+    #     default=None,
+    #     blank=True,
+    #     null=True
+    # )
 
     # COMPATIBILITY with old auth
-    news_count_read = models.IntegerField(
-        default=0,
-        verbose_name='Количество прочитанных новостей'
-    )
-    delivery_disabled = models.BooleanField(
-        default=False,
-        verbose_name='Отключено ли получение рассылки'
-    )
-    disable_paper_bills = models.BooleanField(default=False)
-    family = models.ManyToManyField(
-        'TenantProfile',
-        related_name='family',
-        verbose_name='Семья'
-    )  # те, кто живёт в той же квартире?
+    # delivery_disabled = models.BooleanField(
+    #     default=False,
+    #     verbose_name='Отключено ли получение рассылки'
+    # )
+    # disable_paper_bills = models.BooleanField(default=False)
 
-    @property
-    def is_coop_member(self):
-        """Является ли житель членом ТСЖ/ЖСК?"""
-        return bool(self.coop_member_date_from)
+    # те, кто живёт в той же квартире?
+    # это лучше делать через запрос жильцов из квартиры
+    # family = models.ManyToManyField(
+    #     'TenantProfile',
+    #     related_name='family',
+    #     verbose_name='Семья'
+    # )
+
+    # @property
+    # def is_coop_member(self):
+    #     """Является ли житель членом ТСЖ/ЖСК?"""
+    #     return bool(self.coop_member_date_from)
 
     def __repr__(self):
         return f'[tenant:{self.pk}:{self.first_name} {self.last_name[:1]}.]'

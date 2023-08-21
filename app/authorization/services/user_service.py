@@ -8,9 +8,9 @@ from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
-from app.authorization.models.user_data import UserData
-from app.authorization.models.profiles import (
-    OrganizationProfile,
+from app.authorization.models import UserData
+from app.authorization.models import (
+    CompanyProfile,
     TenantProfile,
     WorkerProfile
 )
@@ -82,7 +82,7 @@ class UserService:
             email=email,
             password=password,
             number=number,
-            type=user_type,
+            # type=[user_type],
             phones={},
             comment='',
             avatar=None,
@@ -94,19 +94,19 @@ class UserService:
         )
         logger.debug('Created user: %s', user)
 
-        profile = cls.create_user_profile(user, **extra_fields)
+        profile = cls.create_user_profile(user, user_type, **extra_fields)
         logger.debug('Created profile: %s', profile)
 
         return user
 
     @classmethod
-    def create_user_profile(cls, user: UserData, **kwargs):
+    def create_user_profile(cls, user: UserData, user_type: str, **kwargs):
         """Создание профиля пользователя в зависимости от типа"""
-        if user.type == UserData.ORG:
-            profile = cls.create_profile_organization(user, **kwargs)
-        elif user.type == UserData.TENANT:
+        if user_type == UserData.ORG:
+            profile = cls.create_profile_company(user, **kwargs)
+        elif user_type == UserData.TENANT:
             profile = cls.create_profile_tenant(user, **kwargs)
-        elif user.type == UserData.WORKER:
+        elif user_type == UserData.WORKER:
             profile = cls.create_profile_worker(user, **kwargs)
         else:
             msg = 'Указан не верный тип профиля пользователя!'
@@ -116,22 +116,22 @@ class UserService:
         return profile
 
     @staticmethod
-    def create_profile_organization(
+    def create_profile_company(
             user: UserData,
             org_name: str,
             **kwargs
-    ) -> OrganizationProfile:
+    ) -> CompanyProfile:
         """Создание профиля организации"""
         address = kwargs.get('org_address')
         bank_details = kwargs.get('bank_detailes')
-        organization = OrganizationProfile.objects.create(
+        company = CompanyProfile.objects.create(
             user=user,
             name=org_name,
             address=address,
             bank_details=bank_details,
             **kwargs
         )
-        return organization
+        return company
 
     @staticmethod
     def create_profile_tenant(
@@ -158,7 +158,7 @@ class UserService:
             last_name: str,
             birth_date: datetime.datetime,
             sex: str,
-            company: OrganizationProfile,
+            company: CompanyProfile,
             surname=None,
             **kwargs
     ) -> WorkerProfile:
