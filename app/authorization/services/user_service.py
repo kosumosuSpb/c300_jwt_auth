@@ -4,13 +4,12 @@ import datetime
 
 import jwt
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
-from app.authorization.models import (
-    UserData,
+from app.authorization.models.user_data import UserData
+from app.authorization.models.profiles import (
     OrganizationProfile,
     TenantProfile,
     WorkerProfile

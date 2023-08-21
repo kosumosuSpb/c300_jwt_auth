@@ -7,10 +7,9 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.query import QuerySet
 from django.test import Client, TestCase, tag
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from app.authorization.models import UserData
+from app.authorization.models.user_data import UserData
 from app.authorization.services.user_service import UserService
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 

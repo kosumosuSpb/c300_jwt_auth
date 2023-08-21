@@ -2,7 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from .models import UserData
+from app.authorization.models.user_data import UserData
 
 
 logger = logging.getLogger(__name__)

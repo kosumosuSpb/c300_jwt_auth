@@ -3,6 +3,7 @@
 **/.env
 /c300_requirements
 /.db_temp
+/temp/
 
 **/*.sqlite*
 /*-data/
