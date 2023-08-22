@@ -36,10 +36,7 @@ class Area(models.Model):
         on_delete=models.CASCADE,
         related_name='areas'
     )
-    tenants = models.ManyToManyField(
-        TenantProfile,
-        related_name='areas'
-    )
+    # tenants
     # owners
 
 

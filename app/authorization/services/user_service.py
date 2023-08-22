@@ -12,7 +12,8 @@ from app.authorization.models import UserData
 from app.authorization.models import (
     CompanyProfile,
     TenantProfile,
-    WorkerProfile
+    WorkerProfile,
+    UserProfile
 )
 from config.settings import SIMPLE_JWT
 
@@ -25,13 +26,13 @@ class UserServiceException(Exception):
 
 
 class UserService:
-    """Управление пользователем"""
+    """Управление пользователем и его профилем"""
     def __init__(self, user_id_or_token: str | int):
         self.user: UserData = self.get_user(user_id_or_token)
 
     @classmethod
     def get_user(cls, user_id_or_token: str | int) -> UserData | None:
-        """Вернёт модель пользователя"""
+        """Вернёт модель пользователя UserData"""
         is_num = isinstance(user_id_or_token, int) or (isinstance(user_id_or_token, str) and user_id_or_token.isdecimal())
 
         if is_num:
@@ -70,9 +71,15 @@ class UserService:
             number: str | None = None,
             **extra_fields
     ) -> UserData:
-        """Создание пользователя"""
+        """Создание пользователя и его профиля"""
         if not number:
             number = cls._get_number()
+
+        if not user_type:
+            msg = ('Не указан тип пользователя (user_type): '
+                   'не возможно создать пользователя без указания его типа!')
+            logger.error(msg)
+            raise AttributeError(msg)
 
         is_admin = extra_fields.get('is_admin', False)
         is_staff = extra_fields.get('is_staff', False)
@@ -100,14 +107,32 @@ class UserService:
         return user
 
     @classmethod
-    def create_user_profile(cls, user: UserData, user_type: str, **kwargs):
-        """Создание профиля пользователя в зависимости от типа"""
+    def create_user_profile(
+            cls,
+            user: UserData,
+            user_type: str,
+            **extra_fields
+    ) -> UserProfile:
+        """
+        Создание профиля пользователя в зависимости от типа и пользователя с его профилем
+
+        Для профиля-организации нужно ввести: name
+        Для профиля-сотрудника: first_name, last_name, sex, birth_date
+
+        Args:
+            user: Модель пользователя
+            user_type: Тип пользователя: Worker, Tenant, Company
+            **extra_fields: дополнительные поля (у разных профилей разные)
+
+        Returns: Профиль пользователя (UserProfile)
+
+        """
         if user_type == UserData.ORG:
-            profile = cls.create_profile_company(user, **kwargs)
+            profile = cls.create_profile_company(user, **extra_fields)
         elif user_type == UserData.TENANT:
-            profile = cls.create_profile_tenant(user, **kwargs)
+            profile = cls.create_profile_tenant(user, **extra_fields)
         elif user_type == UserData.WORKER:
-            profile = cls.create_profile_worker(user, **kwargs)
+            profile = cls.create_profile_worker(user, **extra_fields)
         else:
             msg = 'Указан не верный тип профиля пользователя!'
             logger.error(msg)
@@ -119,17 +144,17 @@ class UserService:
     def create_profile_company(
             user: UserData,
             org_name: str,
-            **kwargs
+            **extra_fields
     ) -> CompanyProfile:
         """Создание профиля организации"""
-        address = kwargs.get('org_address')
-        bank_details = kwargs.get('bank_detailes')
+        address = extra_fields.get('org_address')
+        bank_details = extra_fields.get('bank_detailes')
         company = CompanyProfile.objects.create(
             user=user,
             name=org_name,
             address=address,
             bank_details=bank_details,
-            **kwargs
+            **extra_fields
         )
         return company
 
@@ -138,8 +163,10 @@ class UserService:
             user: UserData,
             first_name: str,
             last_name: str,
+            birth_date: datetime.datetime,
+            sex: str,
             surname=None,
-            **kwargs
+            **extra_fields
     ) -> TenantProfile:
         """Создание профиля жителя"""
         tenant = TenantProfile.objects.create(
@@ -147,7 +174,9 @@ class UserService:
             first_name=first_name,
             last_name=last_name,
             surname=surname,
-            **kwargs
+            birth_date=birth_date,
+            sex=sex,
+            **extra_fields
         )
         return tenant
 

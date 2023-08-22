@@ -2,10 +2,23 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
 from app.authorization.models import UserData
+from app.authorization.models import Area
 
 
-class CompanyProfile(models.Model):
-    """Профиль компании"""
+class UserProfile(models.Model):
+    """Абстрактная модель профиля пользователя"""
+    class Meta:
+        abstract = True
+
+
+class CompanyProfile(UserProfile):
+    """
+    Профиль компании
+
+    Обязательные поля:
+        - user - пользователь, которым является
+        - name - название организации
+    """
     user = models.OneToOneField(
         UserData,
         on_delete=models.PROTECT,
@@ -45,7 +58,16 @@ class Department(models.Model):
     # workers
 
 
-class HumanBaseProfile(models.Model):
+class HumanBaseProfile(UserProfile):
+    """
+    Базовая модель профиля пользователя-человека
+
+    Обязательные пола:
+        - first_name - Имя
+        - last_name - Фамилия
+        - birth_date - Дата рождения
+        - sex - Пол
+    """
     class Meta:
         abstract = True
 
@@ -56,7 +78,7 @@ class HumanBaseProfile(models.Model):
 
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия')
-    surname = models.CharField(max_length=50, verbose_name='Отчество', blank=True, null=True)
+    surname = models.CharField(max_length=50, verbose_name='Отчество', null=True, default='')
     birth_date = models.DateTimeField(verbose_name="Дата рождения")
     sex = models.CharField(max_length=10, choices=GENDER_TYPE_CHOICES, verbose_name="Пол")
     #
@@ -87,13 +109,24 @@ class HumanBaseProfile(models.Model):
     @property
     def short_name(self):
         """Возвращает фамилию и инициалы"""
-        return f'{self.last_name} {self.first_name[:1]}. {self.surname[:1]}.'
+        return (
+            f'{self.last_name} {self.first_name[:1]}. {self.surname[:1]}.' if self.surname else
+            f'{self.last_name} {self.first_name[:1]}.'
+        )
 
     def __repr__(self):
         return f'[hum:{self.pk}:{self.first_name} {self.last_name[:1]}.]'
 
 
 class WorkerProfile(HumanBaseProfile):
+    """
+    Профиль пользователя-сотрудника
+
+    Обязательные поля:
+        - user - пользователь (аккаунт)
+        - position - должность
+        - department - отдел
+    """
     user = models.OneToOneField(
         UserData,
         on_delete=models.PROTECT,
@@ -119,7 +152,12 @@ class WorkerProfile(HumanBaseProfile):
 
 
 class TenantProfile(HumanBaseProfile):
-    """Житель-человек"""
+    """
+    Профиль пользователя-жителя
+
+    Обязательные поля:
+        - user
+    """
 
     user = models.OneToOneField(
         UserData,
@@ -145,13 +183,23 @@ class TenantProfile(HumanBaseProfile):
     )
 
     # AREA
-    # areas M2M to Area - в каких помещениях житель живёт
+    area = models.ForeignKey(
+        Area,
+        on_delete=models.SET_NULL,
+        related_name='tenants'
+    )  # в каких помещениях житель живёт
     rooms = ArrayField(
         models.CharField(max_length=11, blank=True),
         blank=True,
         null=True
     )
     # owners_areas
+
+    @property
+    def provider(self):
+        """Возвращает компанию-поставщика услуг"""
+        company = self.area.house.house_group.company
+        return company
 
     # MEMBERSHIP - возможно вообще не нужно?
     # coop_member_date_from = models.DateTimeField(

@@ -3,7 +3,8 @@ from .profiles import (
     CompanyProfile,
     WorkerProfile,
     TenantProfile,
-    Department
+    Department,
+    UserProfile
 )
 from .house_data import (
     HouseGroup,

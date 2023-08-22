@@ -47,7 +47,7 @@ class UserData(AbstractUser):
     TYPE_CHOICES = (
         (WORKER, 'Worker'),
         (TENANT, 'Tenant'),
-        (ORG, 'Organization'),
+        (ORG, 'Company'),
     )
 
     # BASE FIELDS

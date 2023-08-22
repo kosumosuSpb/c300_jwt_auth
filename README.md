@@ -15,6 +15,10 @@
 * PostgreSQL (https://hub.docker.com/_/postgres)
 
 
+## Схема БД
+
+![Диаграмма БД](./readme_dir/db_diagram.png "Диаграмма БД")
+
 ### Создание виртуального окружения
 
     python3.11 -m venv .venv
