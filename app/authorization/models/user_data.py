@@ -75,6 +75,11 @@ class UserData(AbstractUser):
     is_staff = models.BooleanField(default=False)  # возможно, не нужно
     is_superuser = models.BooleanField(default=False)
 
+    # RELATIONS
+    # company_profile
+    # worker_profile
+    # tenant_profile
+
     # ADDITIONAL FIELDS
     number = models.CharField(
         max_length=13,

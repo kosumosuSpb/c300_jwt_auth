@@ -1,5 +1,6 @@
 import sys
 import logging
+import datetime
 from http.cookies import Morsel
 
 import requests
@@ -11,6 +12,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 
 from app.authorization.models.user_data import UserData
 from app.authorization.services.user_service import UserService
+from app.authorization.models.company_profile import CompanyProfile
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 
 
@@ -26,17 +28,54 @@ class TestAccount(TestCase):
         cls.refresh_url = '/api/v1/login/refresh/'
         cls.logout_url = '/api/v1/logout/'
         cls.test_url = '/api/v1/test/'
-        # VARIABLES
-        cls.email = 'some@email.one'
+        # ACC VARIABLES
+        cls.email = 'base@email.one'
         cls.password = 'somePassWord1'
+
+        cls.email_org = 'company@email.one'
+        cls.password_org = 'somePassWord_company1'
+        cls.company_name = 'Company1'
+
+        cls.first_name = 'Иван'
+        cls.last_name = 'Иванов'
+
+        offset = datetime.timedelta(hours=3)
+        tz = datetime.timezone(offset, name='msk')
+        cls.birth_date = datetime.datetime.now(tz=tz)
+        cls.sex = 'male'
+
+        cls.email_worker = 'worker@email.one'
+        cls.password_worker = 'somePassWord_worker1'
+
+        cls.email_tenant = 'tenant@email.one'
+        cls.password_tenant = 'somePassWord_tenant1'
+        # TOKEN VARIABLES
         cls.access_token_name = SIMPLE_JWT['AUTH_COOKIE']
         cls.refresh_token_name = SIMPLE_JWT['AUTH_COOKIE_REFRESH']
         cls.csrf_token_name = CSRF_COOKIE_NAME
         cls.csrf_headers_name = CSRF_HEADERS_NAME
 
-    def _login(self, client: Client | None = None) -> Response:
+    def setUp(self) -> None:
+        logger.debug('setUp | Создание объекта UserData')
+        UserData.objects.create_user(
+            self.email,
+            self.password,
+        )
+        self.client = Client()
+
+    def tearDown(self) -> None:
+        logger.debug('tearDown | Удаление тестового пользователя UserData')
+        try:
+            user: UserData = UserData.objects.get(email=self.email)
+        except ObjectDoesNotExist as e:
+            logger.debug('Пользователь %s не найден', self.email)
+        else:
+            logger.debug('Пользователь %s найден, удаляем', self.email)
+            user.delete()
+
+    def _base_login(self, client: Client | None = None) -> Response:
         """
-        Делает логин
+        Делает логин базового пользователя UserData
 
         :param client: Тестовый клиент для теста эндпоинта.
             Нужен для того, чтобы можно было создать,
@@ -51,7 +90,15 @@ class TestAccount(TestCase):
 
     @staticmethod
     def _get_value_from_morsel_cookie(cookie: Morsel):
-        """Извлечение значения из типа http.cookies.Morsel"""
+        """
+        Извлечение значения из типа http.cookies.Morsel,
+        который используется в тестовом клиенте
+
+        Args:
+            cookie: http.cookies.Morsel
+
+        Returns: None
+        """
         assert isinstance(cookie, Morsel), 'Пришёл не верный класс, должен быть Morsel'
         assert hasattr(cookie, '_value'), 'У объекта нет поля _value!'
         return cookie._value
@@ -83,25 +130,10 @@ class TestAccount(TestCase):
             }
         return tokens
 
-    def setUp(self) -> None:
-        logger.debug('setUp | Создание тестового пользователя')
-        UserData.objects.create_user(self.email, self.password)
-        self.client = Client()
-
-    def tearDown(self) -> None:
-        logger.debug('tearDown | Удаление тестового пользователя')
-        try:
-            user: UserData = UserData.objects.get(email=self.email)
-        except ObjectDoesNotExist as e:
-            logger.debug('Пользователь %s не найден', self.email)
-        else:
-            logger.debug('Пользователь %s найден, удаляем', self.email)
-            user.delete()
-
-    def test_login(self):
+    def test_base_login(self):
         logger.debug('test_login')
 
-        response = self._login()
+        response = self._base_login()
 
         expected_data = {"action": "LOGIN", "status": "OK"}
         self.assertEqual(200, response.status_code)
@@ -112,25 +144,9 @@ class TestAccount(TestCase):
         self.assertIn(self.refresh_token_name, response.cookies)
         self.assertIn(self.csrf_token_name, response.cookies)  # опционально, для теста не обязательно
 
-    def test_refresh_token(self):
-        logger.debug('test_refresh_token')
-        response: requests.Response = self._login()
-        access_token = response.cookies.get(self.access_token_name)
-        refresh_token = response.cookies.get(self.refresh_token_name)
-
-        cookies = {self.refresh_token_name: refresh_token}
-        response = self.client.post(self.refresh_url, cookies=cookies)
-        new_access_token = response.cookies.get(self.access_token_name)
-        self.assertNotEqual(access_token, new_access_token)
-
-        if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
-            logger.debug('ROTATE_REFRESH_TOKENS is True, check refresh token')
-            new_refresh_token = response.cookies.get(self.refresh_token_name)
-            self.assertNotEqual(refresh_token, new_refresh_token)
-
     def test_logout(self):
         logger.debug('test_logout')
-        response = self._login()
+        response = self._base_login()
         self.assertEquals(200, response.status_code)
 
         access_token = response.cookies.get(self.access_token_name)
@@ -180,27 +196,84 @@ class TestAccount(TestCase):
     # def test_login_logout_login(self):
     #     pass
 
-    def test_create_already_created_user(self):
-        logger.debug('test_register_already_registered_user')
-        with self.assertRaises(ValidationError):
-            UserService.create_user(self.email, self.password)
+    # CREATE USER TESTS
 
-    def test_create_user_with_wrong_email(self):
-        logger.debug('test_create_user_with_wrong_email')
-        with self.assertRaises(ValidationError):
-            UserService.create_user('some_another', 'PassWord_672')
+    def create_company(self) -> UserData:
+        logger.debug('test_create_company')
+        user_company = UserService.create_user(
+            UserData.ORG,
+            self.email_org,
+            self.password_org,
+            self.company_name
+        )
+        return user_company
 
-    def test_create_another_user(self):
-        logger.debug('test_create_another_user')
-        user = UserService.create_user('some_another@mail.ne')
-        self.assertIsInstance(user, UserData)
+    def test_create_company(self):
+        user_company = self.create_company()
+        self.assertIsInstance(user_company, UserData)
+        self.assertTrue(hasattr(user_company, 'company_profile'))
+        self.assertIsInstance(user_company.company_profile, CompanyProfile)
+
+    def create_worker(self) -> UserData:
+        logger.debug('test_create_company')
+        user_worker = UserService.create_user(
+            UserData.WORKER,
+            self.email_worker,
+            self.password_worker,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            birth_date=self.birth_date,
+            sex=self.sex
+        )
+        return user_worker
+
+    def test_create_worker(self):
+        user_worker = self.create_worker()
+        self.assertIsInstance(user_worker, UserData)
+        self.assertTrue(hasattr(user_worker, 'worker_profile'))
+        self.assertIsInstance(user_worker.worker_profile, CompanyProfile)
+
+    # def test_create_already_created_user(self):
+    #     logger.debug('test_register_already_registered_user')
+    #     with self.assertRaises(ValidationError):
+    #         UserService.create_user(self.email, self.password)
+    #
+    # def test_create_user_with_wrong_email(self):
+    #     logger.debug('test_create_user_with_wrong_email')
+    #     with self.assertRaises(ValidationError):
+    #         UserService.create_user('some_another', 'PassWord_672')
+    #
+    # def test_create_another_user(self):
+    #     logger.debug('test_create_another_user')
+    #     user = UserService.create_user('some_another@mail.ne')
+    #     self.assertIsInstance(user, UserData)
+
+    # TOKENS TESTS
+
+    def test_refresh_token(self):
+        logger.debug('test_refresh_token')
+        response: requests.Response = self._base_login()
+        access_token = response.cookies.get(self.access_token_name)
+        refresh_token = response.cookies.get(self.refresh_token_name)
+
+        cookies = {self.refresh_token_name: refresh_token}
+        response = self.client.post(self.refresh_url, cookies=cookies)
+        new_access_token = response.cookies.get(self.access_token_name)
+        self.assertNotEqual(access_token, new_access_token)
+
+        if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
+            logger.debug('ROTATE_REFRESH_TOKENS is True, check refresh token')
+            new_refresh_token = response.cookies.get(self.refresh_token_name)
+            self.assertNotEqual(refresh_token, new_refresh_token)
 
     def test_csrf_token_in_cookies(self):
         logger.debug('test_csrf_token_in_cookies_and_headers')
-        response = self._login()
+        response = self._base_login()
 
         csrf_token_cookies = response.cookies.get(self.csrf_token_name)
         self.assertIsNotNone(csrf_token_cookies)
+
+    # BLACKLIST TESTS
 
     @tag('blacklist')
     def test_add_refresh_to_outstanding_db(self):
@@ -213,7 +286,7 @@ class TestAccount(TestCase):
             logger.debug(skip_msg)
             self.skipTest(skip_msg)
 
-        response = self._login()
+        response = self._base_login()
 
         tokens = self._get_tokens_from_response_cookies(response)
         refresh_token = tokens.get(self.refresh_token_name)
@@ -235,7 +308,7 @@ class TestAccount(TestCase):
             logger.debug(skip_msg)
             self.skipTest(skip_msg)
 
-        response = self._login()
+        response = self._base_login()
         tokens = self._get_tokens_from_response_cookies(response)
         refresh_token = tokens.get(self.refresh_token_name)
 
