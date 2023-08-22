@@ -1,14 +1,17 @@
 from .user_data import UserData
-from .profiles import (
+from .base_profiles import (
+    UserProfile,
+    HumanBaseProfile
+)
+from .worker_profile import WorkerProfile
+from .tenant_profile import TenantProfile
+from .company_profile import (
     CompanyProfile,
-    WorkerProfile,
-    TenantProfile,
-    Department,
-    UserProfile
+    Department
 )
-from .house_data import (
+from .houses import (
     HouseGroup,
-    House,
-    Area,
-    Owner
+    House
 )
+from .area import Area
+from .owner_area import OwnerArea
