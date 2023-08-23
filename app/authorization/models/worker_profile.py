@@ -14,6 +14,7 @@ class WorkerProfile(HumanBaseProfile):
         - position - должность
         - department - отдел
     """
+    type = UserData.WORKER
     user = models.OneToOneField(
         UserData,
         on_delete=models.PROTECT,
@@ -22,14 +23,23 @@ class WorkerProfile(HumanBaseProfile):
     position = models.CharField(max_length=75, verbose_name='Должность')
     department = models.ForeignKey(
         Department,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='workers',
         verbose_name='Отдел в компании, в которой работает сотрудник'
     )
 
     @property
     def company(self):
-        return self.department.company.pk
+        """Возвращает компанию, в которой работает сотрудник или None"""
+        company = None
+        has_department = hasattr(self, 'department')
+        has_company = has_department and hasattr(self.department, 'company')
+
+        if has_company:
+            company = self.department.company
+
+        return company
 
     def __repr__(self):
         return f'[worker:{self.pk}:{self.first_name} {self.last_name[:1]}.]'

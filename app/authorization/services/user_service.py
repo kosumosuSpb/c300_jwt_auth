@@ -12,6 +12,7 @@ from app.authorization.services.base_service import BaseService
 from app.authorization.models import (
     UserData,
     CompanyProfile,
+    Department,
     TenantProfile,
     WorkerProfile,
     UserProfile
@@ -28,15 +29,18 @@ class UserServiceException(Exception):
 
 class UserService(BaseService):
     """Управление пользователем и его профилем"""
-    def __init__(self, user_id_or_token: str | int):
+    def __init__(self, user_id_or_token: str | int | UserData):
         self.user: UserData = self.get_user(user_id_or_token)
 
     @classmethod
     def get_user(cls, user_id_or_token: str | int) -> UserData | None:
         """Вернёт модель пользователя UserData"""
+        is_user_data = isinstance(user_id_or_token, UserData)
         is_num = isinstance(user_id_or_token, int) or (isinstance(user_id_or_token, str) and user_id_or_token.isdecimal())
 
-        if is_num:
+        if is_user_data:
+            user_model = user_id_or_token
+        elif is_num:
             user_model = cls._get_user_from_user_id(user_id_or_token)
         else:
             user_model = cls._get_user_from_token(user_id_or_token)
@@ -188,7 +192,7 @@ class UserService(BaseService):
             last_name: str,
             birth_date: datetime.datetime,
             sex: str,
-            company: CompanyProfile,
+            department: Department | None = None,
             surname=None,
             **kwargs
     ) -> WorkerProfile:
@@ -198,7 +202,7 @@ class UserService(BaseService):
             first_name=first_name,
             last_name=last_name,
             surname=surname,
-            company=company,
+            department=department,
             birth_date=birth_date,
             sex=sex,
             **kwargs

@@ -35,14 +35,14 @@ class UserManager(BaseUserManager):
 
 class UserData(AbstractUser):
     # user types
-    ORG = 'organization'
+    ORG = 'company'
     WORKER = 'worker'
     TENANT = 'tenant'
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['password']
 
     TYPE_CHOICES = (
         (WORKER, 'Worker'),
@@ -145,7 +145,6 @@ class UserData(AbstractUser):
             profiles.append(self.worker_profile)
         if hasattr(self, 'tenant_profile'):
             profiles.append(self.tenant_profile)
-        logger.debug('Профили пользователя %s: %s', self, profiles)
         return profiles
 
     def __str__(self):

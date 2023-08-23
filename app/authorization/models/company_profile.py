@@ -18,7 +18,11 @@ class CompanyProfile(UserProfile):
         on_delete=models.PROTECT,
         related_name='company_profile'
     )
-    name = models.CharField(max_length=100, verbose_name='Название организации')
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Название организации'
+    )
 
     bank_details = models.JSONField(
         blank=True,

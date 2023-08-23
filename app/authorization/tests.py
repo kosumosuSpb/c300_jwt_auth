@@ -6,22 +6,26 @@ from http.cookies import Morsel
 import requests
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.query import QuerySet
-from django.test import Client, TestCase, tag
+from django.test import Client, tag
 from rest_framework.response import Response
+from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from app.authorization.models import *
 # from app.authorization.models.user_data import UserData
 # from app.authorization.models.company_profile import CompanyProfile, Department
 from app.authorization.services.user_service import UserService
+from app.authorization.services.company_service import CompanyService
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 
 
 logger = logging.getLogger(__name__)
 
 
-class TestAccount(TestCase):
-    """Тесты аккаунта: вход, выход, обновление токена, удаление пользователя"""
+class BaseTestCase(APITestCase):
+    """Базовый класс для тестирования"""
+    # fixtures = ['auth.json']
+
     @classmethod
     def setUpTestData(cls):
         # ENDPOINTS
@@ -79,16 +83,28 @@ class TestAccount(TestCase):
             logger.debug('Пользователь %s найден, удаляем', self.email)
             user.delete()
 
-    def _base_login(self, client: Client | None = None) -> Response:
+    def _login(
+            self,
+            email: str | None = None,
+            password: str | None = None,
+            client: Client | None = None
+    ) -> Response:
         """
-        Делает логин базового пользователя UserData
+        Делает логин базового пользователя UserData,
+        либо пользователя, логин и пароль которого прописан
 
         :param client: Тестовый клиент для теста эндпоинта.
             Нужен для того, чтобы можно было создать,
             например Client(enforce_csrf_checks=True) и передать сюда
         :return: Response
         """
-        data = {'email': self.email, 'password': self.password}
+        if email or password:
+            assert email and password, 'Если указан email, то должен быть указан и password!'
+
+        email = email or self.email
+        password = password or self.password
+
+        data = {'email': email, 'password': password}
         headers = {"accept": "application/json"}
         client = client or self.client
         response = client.post(self.login_url, data=data, headers=headers)
@@ -136,10 +152,78 @@ class TestAccount(TestCase):
             }
         return tokens
 
-    def test_base_login(self):
+    # CREATE USERS WITH PROFILES
+    # COMPANY
+    def _create_company(
+            self,
+            email: str | None = None,
+            password: str | None = None,
+            org_name: str | None = None
+    ) -> UserData:
+        user_company = UserService.create_user(
+            UserData.ORG,
+            email=email or self.email_org1,
+            password=password or self.password_org1,
+            org_name=org_name or self.company_name1
+        )
+        return user_company
+
+    def _create_department(self, company: CompanyProfile) -> Department:
+        dep = Department.objects.create(company=company, name=self.department_name1)
+        self.assertIsInstance(dep, Department)
+        return dep
+
+    # WORKER
+    def _create_worker(
+            self,
+            email: str | None = None,
+            password: str | None = None,
+            *,
+            first_name: str | None = None,
+            last_name: str | None = None,
+            birth_date: str | None = None,
+            sex: str | None = None
+    ) -> UserData:
+        user_worker = UserService.create_user(
+            UserData.WORKER,
+            email=email or self.email_worker,
+            password=password or self.password_worker,
+            first_name=first_name or self.first_name,
+            last_name=last_name or self.last_name,
+            birth_date=birth_date or self.birth_date,
+            sex=sex or self.sex
+        )
+        return user_worker
+
+    # TENANT
+    def _create_tenant(
+            self,
+            email: str | None = None,
+            password: str | None = None,
+            *,
+            first_name: str | None = None,
+            last_name: str | None = None,
+            birth_date: str | None = None,
+            sex: str | None = None
+    ) -> UserData:
+        user_tenant = UserService.create_user(
+            UserData.TENANT,
+            email=email or self.email_tenant,
+            password=password or self.password_tenant,
+            first_name=first_name or self.first_name,
+            last_name=last_name or self.last_name,
+            birth_date=birth_date or self.birth_date,
+            sex=sex or self.sex
+        )
+        return user_tenant
+
+
+class TestAccount(BaseTestCase):
+    """Тесты аккаунта: вход, выход, обновление токена, удаление пользователя"""
+    def test_login(self):
         logger.debug('test_login')
 
-        response = self._base_login()
+        response = self._login()
 
         expected_data = {"action": "LOGIN", "status": "OK"}
         self.assertEqual(200, response.status_code)
@@ -152,7 +236,7 @@ class TestAccount(TestCase):
 
     def test_logout(self):
         logger.debug('test_logout')
-        response = self._base_login()
+        response = self._login()
         self.assertEquals(200, response.status_code)
 
         access_token = response.cookies.get(self.access_token_name)
@@ -199,95 +283,54 @@ class TestAccount(TestCase):
 
         self.assertEqual(401, response.status_code)
 
-    # def test_login_logout_login(self):
-    #     pass
-
-    # CREATE USERS WITH PROFILES
-    # COMPANY
-    def create_company(self) -> UserData:
-        user_company = UserService.create_user(
-            UserData.ORG,
-            self.email_org1,
-            self.password_org1,
-            self.company_name1
-        )
-        return user_company
-
-    def create_department(self):
-        company = self.create_company()
-        dep = Department.objects.create(company=company, name=self.department_name1)
-        self.assertIsInstance(dep, Department)
-
     def test_create_company(self):
         logger.debug('test_create_company')
-        user_company = self.create_company()
+        user_company = self._create_company()
         self.assertIsInstance(user_company, UserData)
         self.assertTrue(hasattr(user_company, 'company_profile'))
         self.assertIsInstance(user_company.company_profile, CompanyProfile)
 
     def test_create_department(self):
-        pass
-
-    # WORKER
-    def create_worker(self) -> UserData:
-        user_worker = UserService.create_user(
-            UserData.WORKER,
-            self.email_worker,
-            self.password_worker,
-            first_name=self.first_name,
-            last_name=self.last_name,
-            birth_date=self.birth_date,
-            sex=self.sex
-        )
-        return user_worker
+        user_company = self._create_company()
+        profile: CompanyProfile = user_company.company_profile
+        department = self._create_department(profile)
+        self.assertIsInstance(department, Department)
 
     def test_create_worker(self):
         logger.debug('test_create_worker')
-        user_worker = self.create_worker()
+        user_worker = self._create_worker()
         self.assertIsInstance(user_worker, UserData)
         self.assertTrue(hasattr(user_worker, 'worker_profile'))
-        self.assertIsInstance(user_worker.worker_profile, CompanyProfile)
+        self.assertIsInstance(user_worker.worker_profile, WorkerProfile)
 
-    # TENANT
-    def create_tenant(self) -> UserData:
-        user_tenant = UserService.create_user(
-            UserData.TENANT,
-            self.email_tenant,
-            self.password_tenant,
-            first_name=self.first_name,
-            last_name=self.last_name,
-            birth_date=self.birth_date,
-            sex=self.sex
-        )
-        return user_tenant
+    def test_link_worker_to_department(self):
+        user_worker = self._create_worker()
+        user_company = self._create_company()
+        dep = self._create_department(user_company.company_profile)
+        CompanyService.link_worker_to_department(user_worker.worker_profile, dep)
 
     def test_create_tenant(self):
         logger.debug('test_create_tenant')
-        user_tenant = self.create_tenant()
+        user_tenant = self._create_tenant()
         self.assertIsInstance(user_tenant, UserData)
         self.assertTrue(hasattr(user_tenant, 'tenant_profile'))
-        self.assertIsInstance(user_tenant.tenant_profile, CompanyProfile)
+        self.assertIsInstance(user_tenant.tenant_profile, TenantProfile)
 
-    # def test_create_already_created_user(self):
-    #     logger.debug('test_register_already_registered_user')
-    #     with self.assertRaises(ValidationError):
-    #         UserService.create_user(self.email, self.password)
-    #
-    # def test_create_user_with_wrong_email(self):
-    #     logger.debug('test_create_user_with_wrong_email')
-    #     with self.assertRaises(ValidationError):
-    #         UserService.create_user('some_another', 'PassWord_672')
-    #
-    # def test_create_another_user(self):
-    #     logger.debug('test_create_another_user')
-    #     user = UserService.create_user('some_another@mail.ne')
-    #     self.assertIsInstance(user, UserData)
+    def test_create_already_created_user(self):
+        logger.debug('test_register_already_registered_user')
+        with self.assertRaises(ValidationError):
+            UserService.create_user(UserData.TENANT, self.email, self.password)
+
+    def test_create_user_with_wrong_email(self):
+        logger.debug('test_create_user_with_wrong_email')
+        with self.assertRaises(ValidationError):
+            user_tenant = self._create_tenant(email='aerg')
 
     # TOKENS TESTS
 
     def test_refresh_token(self):
         logger.debug('test_refresh_token')
-        response: requests.Response = self._base_login()
+        response: requests.Response = self._login()
         access_token = response.cookies.get(self.access_token_name)
         refresh_token = response.cookies.get(self.refresh_token_name)
 
@@ -303,7 +346,7 @@ class TestAccount(TestCase):
 
     def test_csrf_token_in_cookies(self):
         logger.debug('test_csrf_token_in_cookies_and_headers')
-        response = self._base_login()
+        response = self._login()
 
         csrf_token_cookies = response.cookies.get(self.csrf_token_name)
         self.assertIsNotNone(csrf_token_cookies)
@@ -321,7 +364,7 @@ class TestAccount(TestCase):
             logger.debug(skip_msg)
             self.skipTest(skip_msg)
 
-        response = self._base_login()
+        response = self._login()
 
         tokens = self._get_tokens_from_response_cookies(response)
         refresh_token = tokens.get(self.refresh_token_name)
@@ -343,7 +386,7 @@ class TestAccount(TestCase):
             logger.debug(skip_msg)
             self.skipTest(skip_msg)
 
-        response = self._base_login()
+        response = self._login()
         tokens = self._get_tokens_from_response_cookies(response)
         refresh_token = tokens.get(self.refresh_token_name)
 
