@@ -8,8 +8,9 @@ from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
-from app.authorization.models import UserData
+from app.authorization.services.base_service import BaseService
 from app.authorization.models import (
+    UserData,
     CompanyProfile,
     TenantProfile,
     WorkerProfile,
@@ -25,7 +26,7 @@ class UserServiceException(Exception):
     pass
 
 
-class UserService:
+class UserService(BaseService):
     """Управление пользователем и его профилем"""
     def __init__(self, user_id_or_token: str | int):
         self.user: UserData = self.get_user(user_id_or_token)

@@ -10,9 +10,10 @@ from django.test import Client, TestCase, tag
 from rest_framework.response import Response
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from app.authorization.models.user_data import UserData
+from app.authorization.models import *
+# from app.authorization.models.user_data import UserData
+# from app.authorization.models.company_profile import CompanyProfile, Department
 from app.authorization.services.user_service import UserService
-from app.authorization.models.company_profile import CompanyProfile
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 
 
@@ -32,9 +33,14 @@ class TestAccount(TestCase):
         cls.email = 'base@email.one'
         cls.password = 'somePassWord1'
 
-        cls.email_org = 'company@email.one'
-        cls.password_org = 'somePassWord_company1'
-        cls.company_name = 'Company1'
+        cls.email_org1 = 'company1@email.one'
+        cls.email_org2 = 'company2@email.one'
+        cls.password_org1 = 'somePassWord_company1'
+        cls.password_org2 = 'somePassWord_company2'
+        cls.company_name1 = 'Company1'
+        cls.company_name2 = 'Company2'
+        cls.department_name1 = 'Department1'
+        cls.department_name2 = 'Department2'
 
         cls.first_name = 'Иван'
         cls.last_name = 'Иванов'
@@ -196,26 +202,34 @@ class TestAccount(TestCase):
     # def test_login_logout_login(self):
     #     pass
 
-    # CREATE USER TESTS
-
+    # CREATE USERS WITH PROFILES
+    # COMPANY
     def create_company(self) -> UserData:
-        logger.debug('test_create_company')
         user_company = UserService.create_user(
             UserData.ORG,
-            self.email_org,
-            self.password_org,
-            self.company_name
+            self.email_org1,
+            self.password_org1,
+            self.company_name1
         )
         return user_company
 
+    def create_department(self):
+        company = self.create_company()
+        dep = Department.objects.create(company=company, name=self.department_name1)
+        self.assertIsInstance(dep, Department)
+
     def test_create_company(self):
+        logger.debug('test_create_company')
         user_company = self.create_company()
         self.assertIsInstance(user_company, UserData)
         self.assertTrue(hasattr(user_company, 'company_profile'))
         self.assertIsInstance(user_company.company_profile, CompanyProfile)
 
+    def test_create_department(self):
+        pass
+
+    # WORKER
     def create_worker(self) -> UserData:
-        logger.debug('test_create_company')
         user_worker = UserService.create_user(
             UserData.WORKER,
             self.email_worker,
@@ -228,10 +242,31 @@ class TestAccount(TestCase):
         return user_worker
 
     def test_create_worker(self):
+        logger.debug('test_create_worker')
         user_worker = self.create_worker()
         self.assertIsInstance(user_worker, UserData)
         self.assertTrue(hasattr(user_worker, 'worker_profile'))
         self.assertIsInstance(user_worker.worker_profile, CompanyProfile)
+
+    # TENANT
+    def create_tenant(self) -> UserData:
+        user_tenant = UserService.create_user(
+            UserData.TENANT,
+            self.email_tenant,
+            self.password_tenant,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            birth_date=self.birth_date,
+            sex=self.sex
+        )
+        return user_tenant
+
+    def test_create_tenant(self):
+        logger.debug('test_create_tenant')
+        user_tenant = self.create_tenant()
+        self.assertIsInstance(user_tenant, UserData)
+        self.assertTrue(hasattr(user_tenant, 'tenant_profile'))
+        self.assertIsInstance(user_tenant.tenant_profile, CompanyProfile)
 
     # def test_create_already_created_user(self):
     #     logger.debug('test_register_already_registered_user')
