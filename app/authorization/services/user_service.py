@@ -73,10 +73,25 @@ class UserService(BaseService):
             user_type: str,
             email: str,
             password: str | None = None,
+            *,
+            profile: dict | None = None,
             number: str | None = None,
             **extra_fields
     ) -> UserData:
-        """Создание пользователя и его профиля"""
+        """
+        Создание пользователя и его профиля
+
+        Args:
+            user_type: Тип профиля пользователя: company, worker, tenant
+            email: электронная почта
+            password: пароль
+            profile: словарь с профилем для создания профиля
+            number: номер лицевого счёта
+            **extra_fields:
+
+        Returns:
+            Модель пользователя UserData
+        """
         if not number:
             number = cls._get_number()
 
@@ -226,24 +241,12 @@ class UserService(BaseService):
                 break
         return number
 
-    def del_user(self):
+    def delete_user(self):
         """Удаление текущего пользователя"""
-        status = self._del_user(self.user.pk)
-        return status
-
-    @staticmethod
-    def _del_user(user_id: int | None = None):
-        """Удаление пользователя"""
-        logger.debug('Запущено удаление пользователя %s', user_id)
-        assert isinstance(user_id, int), 'Тип данных user_id должен быть int или None!'
-        try:
-            user: UserData = UserData.objects.get(pk=user_id)
-        except ObjectDoesNotExist as e:
-            logger.error('Пользователь с id: %s не найден: %s', user_id, e)
-            return False
-        user.delete()
-        logger.debug('Пользователь %s успешно удалён', user)
-        return True
+        logger.debug('Запущено удаление пользователя %s', self.user)
+        self.user.delete()
+        logger.debug('Пользователь %s успешно удалён', self.user)
+        return
 
     @classmethod
     def get_user_id_from_token(cls, token: str) -> int | None:
@@ -277,9 +280,28 @@ class UserService(BaseService):
     def _get_user_from_user_id(user_id: str | int) -> UserData | None:
         """Вернёт модель пользователя"""
         if not isinstance(user_id, (str, int)):
-            logger.error('Не верный тип user_id! должен быть str или int')
-            return
+            msg = 'Не верный тип user_id! должен быть str или int'
+            logger.error(msg)
+            raise TypeError(msg)
 
         user_id = int(user_id)
-        user_model = UserData.objects.get(pk=user_id)
+        try:
+            user_model = UserData.objects.get(pk=user_id)
+        except ObjectDoesNotExist as dne:
+            msg = f'Пользователь с id {user_id} не найден: {dne}'
+            logger.error(msg)
+            raise KeyError(msg)
+
         return user_model
+
+    def activate_user(self, activation_code: str):
+        """Активация пользователя"""
+        is_correct_code = self.user.activation_code == activation_code
+
+        if is_correct_code:
+            self.user.activation_code = None
+            self.user.is_active = True
+        else:
+            msg = 'Не верный код активации'
+            logger.error(msg)
+            raise ValueError(msg)

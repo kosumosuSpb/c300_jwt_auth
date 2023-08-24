@@ -1,6 +1,12 @@
 """
-Действия с пользователем: Создание, удаление, изменение данных, изменение пароля
+Действия с пользователем:
+    - Создание (регистрация)
+    - удаление
+    - изменение данных
+    - изменение пароля
+    - активация
 """
+
 import logging
 
 from rest_framework import status
@@ -33,8 +39,9 @@ class UserDeleteView(APIView):
         logger.debug('UserDeleteView | POST')
         logger.debug('Удаление пользователя %s', request.user)
         user_service = UserService(request.user)
-        status = user_service.del_user()
-        logger.debug('Статус операции удаления пользователя: %s', status)
+        user_service.delete_user()
+
+        return Response(data={'status': 'OK'}, status=status.HTTP_200_OK)
 
 
 class PasswordChangeView(APIView):
@@ -44,7 +51,35 @@ class PasswordChangeView(APIView):
 
 class ActivateAccountView(APIView):
     def post(self, request: Request, *args, **kwargs):
-        pass
+        logger.debug('ActivateAccountView')
+
+        query_params = request.query_params
+        activation_code = query_params.get('activation_code')
+        user_id = query_params.get('user_id')
+
+        if not all([activation_code, user_id]):
+            return Response(
+                data={
+                    'status': 'BAD_REQUEST',
+                    'detail': 'Не хватает кода активации, либо user_id'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_service = UserService(user_id)
+            user_service.activate_user(activation_code)
+        except TypeError as te:
+            return Response(data={'status': 'FAIL', 'detail': te},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except KeyError as le:
+            return Response(data={'status': 'FAIL', 'detail': le},
+                            status=status.HTTP_404_NOT_FOUND)
+        except ValueError as ve:
+            return Response(data={'status': 'FAIL', 'detail': ve},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        return Response(data={'status': 'OK'}, status=status.HTTP_202_ACCEPTED)
 
 
 class TestView(APIView):

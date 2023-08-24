@@ -75,6 +75,13 @@ class UserData(AbstractUser):
     is_staff = models.BooleanField(default=False)  # возможно, не нужно
     is_superuser = models.BooleanField(default=False)
 
+    activation_code = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name='Код активации'
+    )
+
     # RELATIONS
     # company_profile
     # worker_profile
