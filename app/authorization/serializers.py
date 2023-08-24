@@ -8,7 +8,6 @@ from app.authorization.models import (
     WorkerProfile,
     TenantProfile,
 )
-
 from app.authorization.services.user_service import UserService
 
 
@@ -18,19 +17,19 @@ logger = logging.getLogger(__name__)
 class CompanyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyProfile
-        fields = '__all__'
+        exclude = ['user']
 
 
 class WorkerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkerProfile
-        fields = '__all__'
+        exclude = ['user']
 
 
 class TenantProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = TenantProfile
-        fields = '__all__'
+        exclude = ['user']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,10 +41,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         logger.debug('UserSerializer - Validated data: %s', validated_data)
-        # user = UserData.objects.create(email=validated_data['email'], name=validated_data['name'])
 
+        email = validated_data.pop('email', None)
         password = validated_data.pop('password', None)
         profile = validated_data.pop('profile', None)
+
+        if not password:
+            msg = 'Не передан пароль!'
+            logger.error(msg)
+            raise serializers.ValidationError(msg)
 
         if not profile:
             msg = 'Не передан обязательный атрибут "profile"!'
@@ -58,23 +62,24 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(detail=msg)
 
         user_type = profile.pop('type', None)
+        # TODO: добавить поле типа в профили, чтобы его можно было сериализовать?
         if user_type == UserData.ORG:
-            pass
+            profile_serializer = CompanyProfileSerializer(data=profile)
         elif user_type == UserData.WORKER:
-            pass
+            profile_serializer = WorkerProfileSerializer(data=profile)
         elif user_type == UserData.TENANT:
-            pass
+            profile_serializer = TenantProfileSerializer(data=profile)
         else:
             msg = 'Передан не верный тип профиля пользователя (в "profiles")!'
             logger.error(msg)
             raise serializers.ValidationError(detail=msg)
 
-        user = UserService.create_user(user_type, profile=profile)
+        profile_serializer.is_valid(raise_exception=True)
+        logger.debug('Profile data: %s', profile)
+        logger.debug('Profile validated data: %s', profile_serializer.validated_data)
+        profile = profile_serializer.validated_data
 
-        if not password:
-            msg = 'Создание пароля не реализовано'
-            logger.error(msg)
-            raise NotImplementedError(msg)
+        user = UserService.create_user(email, **validated_data, profile=profile)
 
         user.set_password(password)
         user.save()

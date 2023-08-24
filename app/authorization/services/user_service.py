@@ -70,11 +70,10 @@ class UserService(BaseService):
     @classmethod
     def create_user(
             cls,
-            user_type: str,
             email: str,
             password: str | None = None,
             *,
-            profile: dict | None = None,
+            profile: dict,
             number: str | None = None,
             **extra_fields
     ) -> UserData:
@@ -82,12 +81,11 @@ class UserService(BaseService):
         Создание пользователя и его профиля
 
         Args:
-            user_type: Тип профиля пользователя: company, worker, tenant
             email: электронная почта
             password: пароль
-            profile: словарь с профилем для создания профиля
+            profile: словарь с профилем для создания профиля пользователя
             number: номер лицевого счёта
-            **extra_fields:
+            **extra_fields: дополнительные поля пользователя
 
         Returns:
             Модель пользователя UserData
@@ -95,8 +93,11 @@ class UserService(BaseService):
         if not number:
             number = cls._get_number()
 
+        logger.debug('UserService | profile: %s', profile)
+
+        user_type = profile.pop('type', None)
         if not user_type:
-            msg = ('Не указан тип пользователя (user_type): '
+            msg = ('В  профиле не указан тип пользователя (type): '
                    'не возможно создать пользователя без указания его типа!')
             logger.error(msg)
             raise AttributeError(msg)
@@ -109,7 +110,6 @@ class UserService(BaseService):
             email=email,
             password=password,
             number=number,
-            # type=[user_type],
             phones={},
             comment='',
             avatar=None,
@@ -121,7 +121,7 @@ class UserService(BaseService):
         )
         logger.debug('Created user: %s', user)
 
-        profile = cls.create_user_profile(user, user_type, **extra_fields)
+        profile = cls.create_user_profile(user, user_type, profile)
         logger.debug('Created profile: %s', profile)
 
         return user
@@ -131,7 +131,7 @@ class UserService(BaseService):
             cls,
             user: UserData,
             user_type: str,
-            **extra_fields
+            profile: dict
     ) -> UserProfile:
         """
         Создание профиля пользователя в зависимости от типа и пользователя с его профилем
@@ -142,17 +142,17 @@ class UserService(BaseService):
         Args:
             user: Модель пользователя
             user_type: Тип пользователя: Worker, Tenant, Company
-            **extra_fields: дополнительные поля (у разных профилей разные)
+            profile: словарь с данными для создания профиля пользователя
 
         Returns: Профиль пользователя (UserProfile)
 
         """
         if user_type == UserData.ORG:
-            profile = cls.create_profile_company(user, **extra_fields)
+            profile = cls.create_profile_company(user, profile)
         elif user_type == UserData.TENANT:
-            profile = cls.create_profile_tenant(user, **extra_fields)
+            profile = cls.create_profile_tenant(user, profile)
         elif user_type == UserData.WORKER:
-            profile = cls.create_profile_worker(user, **extra_fields)
+            profile = cls.create_profile_worker(user, profile)
         else:
             msg = 'Указан не верный тип профиля пользователя!'
             logger.error(msg)
@@ -163,65 +163,33 @@ class UserService(BaseService):
     @staticmethod
     def create_profile_company(
             user: UserData,
-            org_name: str,
-            **extra_fields
+            profile: dict
     ) -> CompanyProfile:
         """Создание профиля организации"""
-        address = extra_fields.get('org_address')
-        bank_details = extra_fields.get('bank_detailes')
-        company = CompanyProfile.objects.create(
-            user=user,
-            name=org_name,
-            address=address,
-            bank_details=bank_details,
-            **extra_fields
-        )
+        assert 'name' in profile, 'Нет необходимого ключа "name" в профиле!'
+        company = CompanyProfile.objects.create(user=user, **profile)
         return company
 
     @staticmethod
     def create_profile_tenant(
             user: UserData,
-            first_name: str,
-            last_name: str,
-            birth_date: datetime.datetime,
-            sex: str,
-            surname=None,
-            **extra_fields
+            profile: dict
     ) -> TenantProfile:
         """Создание профиля жителя"""
-        tenant = TenantProfile.objects.create(
-            user=user,
-            first_name=first_name,
-            last_name=last_name,
-            surname=surname,
-            birth_date=birth_date,
-            sex=sex,
-            **extra_fields
-        )
+        # TODO: добавить проверку наличия необходимых полей в словаре профиля
+        #  метод validate_human_fields
+        tenant = TenantProfile.objects.create(user=user, **profile)
         return tenant
 
     @staticmethod
     def create_profile_worker(
             user: UserData,
-            first_name: str,
-            last_name: str,
-            birth_date: datetime.datetime,
-            sex: str,
-            department: Department | None = None,
-            surname=None,
-            **kwargs
+            profile: dict
     ) -> WorkerProfile:
         """Создание профиля сотрудника"""
-        worker = WorkerProfile.objects.create(
-            user=user,
-            first_name=first_name,
-            last_name=last_name,
-            surname=surname,
-            department=department,
-            birth_date=birth_date,
-            sex=sex,
-            **kwargs
-        )
+        # TODO: добавить проверку наличия необходимых полей в словаре профиля
+        #  метод validate_human_fields
+        worker = WorkerProfile.objects.create(user=user, **profile)
         return worker
 
     def update_email(self):
@@ -240,6 +208,10 @@ class UserService(BaseService):
             except ObjectDoesNotExist:
                 break
         return number
+
+    def validate_human_fields(self, profile: dict) -> bool:
+        """Проверяет наличие необходимых ключей в словаре профиля"""
+        # TODO
 
     def delete_user(self):
         """Удаление текущего пользователя"""
