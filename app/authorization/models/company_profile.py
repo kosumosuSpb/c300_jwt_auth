@@ -39,10 +39,10 @@ class CompanyProfile(UserProfile):
     # owner_areas
 
     def __repr__(self):
-        return f'[Org:{self.pk}:{self.name}]'
+        return f'<org:{self.pk}:{self.name}>'
 
     def __str__(self):
-        return f'[Org:{self.pk}:{self.name}]'
+        return f'<org:{self.pk}:{self.name}>'
 
 
 class Department(models.Model):
@@ -54,3 +54,9 @@ class Department(models.Model):
         related_name='departments'
     )
     # workers
+
+    def __str__(self):
+        return f'<dep:{self.pk}:{self.name}:{self.company}>'
+
+    def __repr__(self):
+        return f'<dep:{self.pk}:{self.name}:{self.company}>'

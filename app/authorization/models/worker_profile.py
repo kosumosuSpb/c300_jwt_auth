@@ -19,7 +19,7 @@ class WorkerProfile(HumanBaseProfile):
         on_delete=models.PROTECT,
         related_name='worker_profile'
     )
-    position = models.CharField(max_length=75, verbose_name='Должность')
+    position = models.CharField(max_length=75, verbose_name='Должность', null=True)
     department = models.ForeignKey(
         Department,
         on_delete=models.SET_NULL,

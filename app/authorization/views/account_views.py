@@ -13,7 +13,9 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser
 
+from app.authorization.models.user_data import UserData
 from app.authorization.serializers import UserSerializer
 from app.authorization.services.user_service import UserService
 
@@ -29,9 +31,17 @@ class RegisterView(APIView):
         logger.debug('RegisterView | POST | request data: %s', request.data)
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        user_validated_data: dict = serializer.validated_data
+        password = user_validated_data.get('password', None)
+
+        user: UserData = UserService.create_user(**user_validated_data)
+
+        user.set_password(password)
+        user.save()
+
         logger.debug('RegisterView | serializer.data: %s', serializer.data)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserDeleteView(APIView):
@@ -39,8 +49,13 @@ class UserDeleteView(APIView):
     def post(self, request: Request, *args, **kwargs):
         logger.debug('UserDeleteView | POST')
         logger.debug('Удаление пользователя %s', request.user)
+        eternal_delete = request.query_params.get('eternal')
+
         user_service = UserService(request.user)
-        user_service.delete_user()
+        if eternal_delete:
+            user_service.delete_user()
+        else:
+            user_service.mark_as_deleted()
 
         return Response(data={'status': 'OK'}, status=status.HTTP_200_OK)
 
@@ -48,6 +63,30 @@ class UserDeleteView(APIView):
 class PasswordChangeView(APIView):
     def post(self, request: Request, *args, **kwargs):
         pass
+
+
+class ManualActivateAccountView(APIView):
+    """Ручная активация аккаунта"""
+    permission_classes = [IsAdminUser]  # TODO: нужно дописать класс на суперпользователя?
+
+    def post(self, request: Request, *args, **kwargs):
+        logger.debug('ManualActivateAccountView | POST')
+        user = request.query_params.get('user')
+
+        if not user:
+            data = {
+                'status': 'ERROR',
+                'detail': 'Нет атрибута "user" в параметрах адресной строки!'
+                          ''}
+            return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+
+        user_service = UserService(user)
+        user_service.manual_activate_user()
+
+        return Response(
+            data={'status': 'OK', 'detail': 'ACTIVATED'},
+            status=status.HTTP_200_OK
+        )
 
 
 class ActivateAccountView(APIView):

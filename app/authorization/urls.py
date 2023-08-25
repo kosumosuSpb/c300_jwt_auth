@@ -10,6 +10,7 @@ from app.authorization.views.auth_views import (
     TokenRefreshCookieView,
     LogoutView,
 )
+from app.authorization.views.company_views import DepartmentCreateView
 
 
 urlpatterns = [
@@ -19,6 +20,7 @@ urlpatterns = [
     path('login/refresh/', TokenRefreshCookieView.as_view(), name='token_refresh'),
     path('activate/', ActivateAccountView.as_view(), name='activate'),
     path('test/', TestView.as_view(), name='test'),
+    path('departmentcreate/', DepartmentCreateView.as_view(), name='department_create'),
 
     # path('verify/', TokenVerifyAuthView.as_view(), name='token_verify'),
 ]

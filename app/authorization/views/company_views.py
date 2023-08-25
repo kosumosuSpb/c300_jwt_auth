@@ -16,8 +16,14 @@ class DepartmentCreateView(APIView):
     # TODO: добавить права
 
     def post(self, request: Request, **kwargs):
-        logger.debug('DepartmentCreateView | POST')
+        """Создание отдела компании"""
+        logger.debug('DepartmentCreateView | POST | request.data: %s',
+                     request.data)
         serializer = DepartmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        company = serializer.validated_data.get('company')
+        company_service = CompanyService(company)
+        company_service.create_department(**serializer.validated_data)
+
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)

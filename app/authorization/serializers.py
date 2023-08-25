@@ -46,18 +46,9 @@ class UserSerializer(serializers.ModelSerializer):
             'activation_code': {'write_only': True},
         }
 
-    def create(self, validated_data):
-        logger.debug('UserSerializer | data: %s', self.data)
-        logger.debug('UserSerializer | Validated data: %s', validated_data)
-
-        email = validated_data.pop('email', None)
-        password = validated_data.pop('password', None)
-        profile = validated_data.pop('profile', None)
-
-        if not password:
-            msg = 'Не передан пароль!'
-            logger.error(msg)
-            raise serializers.ValidationError(msg)
+    def validate_profile(self, profile: dict):
+        """Валидация поля профиля"""
+        logger.debug('validate_profile | Profile data: %s', profile)
 
         user_type = profile.get('type')
         if user_type == ORG:
@@ -72,30 +63,14 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(detail=msg)
 
         profile_serializer.is_valid(raise_exception=True)
-        logger.debug('Profile data: %s', profile)
-        logger.debug('Profile validated data: %s', profile_serializer.validated_data)
-        profile = profile_serializer.validated_data
 
-        user: UserData = UserService.create_user(
-            email,
-            **validated_data,
-            profile=profile
-        )
+        logger.debug('validate_profile | Profile validated data: %s',
+                     profile_serializer.validated_data)
 
-        user.set_password(password)
-        user.save()
-
-        # logger.debug('UserSerializer | data: %s', self.data)
-        return user
+        return profile
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = '__all__'
-
-    def create(self, validated_data):
-        logger.debug('DepartmentSerializer Validated data: %s', validated_data)
-        company = validated_data.get('company')
-        company_service = CompanyService(company)
-        company_service.create_department(**validated_data)

@@ -198,6 +198,12 @@ class UserService(BaseService):
         """Проверяет наличие необходимых ключей в словаре профиля"""
         # TODO
 
+    def mark_as_deleted(self):
+        """Помечает пользователя удёленным"""
+        logger.debug('mark_as_deleted user: %s', self.user)
+        self.user.is_deleted = True
+        self.user.is_active = False
+
     def delete_user(self):
         """Удаление текущего пользователя"""
         logger.debug('Запущено удаление пользователя %s', self.user)
@@ -264,3 +270,11 @@ class UserService(BaseService):
             msg = 'Не верный код активации'
             logger.error(msg)
             raise ValueError(msg)
+
+    def manual_activate_user(self):
+        """Ручная активация пользователя"""
+        logger.debug('Запущена ручная активация пользователя %s', self.user)
+        self.user.activation_code = None
+        self.user.is_active = True
+        self.user.get_access_date = datetime.datetime.now()
+        self.user.save()

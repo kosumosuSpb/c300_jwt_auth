@@ -52,6 +52,8 @@ class CompanyService(BaseService):
     ) -> Department:
         """Создание профиля отдела"""
         department = Department.objects.create(company=company, name=name)
+        logger.debug('Создан отдел: %s', department)
+
         return department
 
     def link_department_to_company(self, dep: Department, company: CompanyProfile):
