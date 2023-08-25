@@ -1,11 +1,11 @@
 from django.urls import path
 
-from app.authorization.views.account_view import (
+from app.authorization.views.account_views import (
     RegisterView,
     ActivateAccountView,
     TestView,
 )
-from app.authorization.views.auth_view import (
+from app.authorization.views.auth_views import (
     LoginView,
     TokenRefreshCookieView,
     LogoutView,

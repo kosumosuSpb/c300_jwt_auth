@@ -1,10 +1,20 @@
 from django.db import models
 
+from config.settings import ORG, WORKER, TENANT
+
 
 class UserProfile(models.Model):
     """Абстрактная модель профиля пользователя"""
+    TYPE_CHOICES = (
+        (WORKER, 'Worker'),
+        (TENANT, 'Tenant'),
+        (ORG, 'Company'),
+    )
+
     class Meta:
         abstract = True
+
+    type = models.CharField(max_length=7, choices=TYPE_CHOICES)
 
 
 class HumanBaseProfile(UserProfile):

@@ -15,11 +15,19 @@ logger = logging.getLogger(__name__)
 class CompanyService(BaseService):
     def __init__(
             self,
-            company: CompanyProfile,
-            department: Department | None = None
+            company: CompanyProfile | int,
     ):
-        self.company = company
-        self.department = department
+        self.company = self.get_company(company)
+
+    @staticmethod
+    def get_company(company_or_id: int | CompanyProfile) -> CompanyProfile:
+        """Возвращает объект CompanyProfile"""
+        if isinstance(company_or_id, CompanyProfile):
+            company = company_or_id
+        else:
+            company: CompanyProfile = CompanyProfile.objects.get(company_or_id)
+
+        return company
 
     @staticmethod
     def create_company(

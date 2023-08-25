@@ -7,8 +7,11 @@ from app.authorization.models import (
     CompanyProfile,
     WorkerProfile,
     TenantProfile,
+    Department,
 )
 from app.authorization.services.user_service import UserService
+from app.authorization.services.company_service import CompanyService
+from config.settings import ORG, TENANT, WORKER
 
 
 logger = logging.getLogger(__name__)
@@ -38,9 +41,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserData
         exclude = ['user_permissions', 'groups']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'activation_code': {'write_only': True},
+        }
 
     def create(self, validated_data):
-        logger.debug('UserSerializer - Validated data: %s', validated_data)
+        logger.debug('UserSerializer | data: %s', self.data)
+        logger.debug('UserSerializer | Validated data: %s', validated_data)
 
         email = validated_data.pop('email', None)
         password = validated_data.pop('password', None)
@@ -51,23 +59,12 @@ class UserSerializer(serializers.ModelSerializer):
             logger.error(msg)
             raise serializers.ValidationError(msg)
 
-        if not profile:
-            msg = 'Не передан обязательный атрибут "profile"!'
-            logger.error(msg)
-            raise serializers.ValidationError(detail=msg)
-
-        if not isinstance(profile, dict):
-            msg = 'Не верный тип аргумента "profile"!'
-            logger.error(msg)
-            raise serializers.ValidationError(detail=msg)
-
-        user_type = profile.pop('type', None)
-        # TODO: добавить поле типа в профили, чтобы его можно было сериализовать?
-        if user_type == UserData.ORG:
+        user_type = profile.get('type')
+        if user_type == ORG:
             profile_serializer = CompanyProfileSerializer(data=profile)
-        elif user_type == UserData.WORKER:
+        elif user_type == WORKER:
             profile_serializer = WorkerProfileSerializer(data=profile)
-        elif user_type == UserData.TENANT:
+        elif user_type == TENANT:
             profile_serializer = TenantProfileSerializer(data=profile)
         else:
             msg = 'Передан не верный тип профиля пользователя (в "profiles")!'
@@ -79,8 +76,26 @@ class UserSerializer(serializers.ModelSerializer):
         logger.debug('Profile validated data: %s', profile_serializer.validated_data)
         profile = profile_serializer.validated_data
 
-        user = UserService.create_user(email, **validated_data, profile=profile)
+        user: UserData = UserService.create_user(
+            email,
+            **validated_data,
+            profile=profile
+        )
 
         user.set_password(password)
         user.save()
+
+        # logger.debug('UserSerializer | data: %s', self.data)
         return user
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = '__all__'
+
+    def create(self, validated_data):
+        logger.debug('DepartmentSerializer Validated data: %s', validated_data)
+        company = validated_data.get('company')
+        company_service = CompanyService(company)
+        company_service.create_department(**validated_data)

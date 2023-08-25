@@ -14,7 +14,6 @@ class WorkerProfile(HumanBaseProfile):
         - position - должность
         - department - отдел
     """
-    type = UserData.WORKER
     user = models.OneToOneField(
         UserData,
         on_delete=models.PROTECT,

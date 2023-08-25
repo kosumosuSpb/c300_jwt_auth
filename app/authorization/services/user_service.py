@@ -17,7 +17,7 @@ from app.authorization.models import (
     WorkerProfile,
     UserProfile
 )
-from config.settings import SIMPLE_JWT
+from config.settings import SIMPLE_JWT, ORG, TENANT, WORKER
 
 
 logger = logging.getLogger(__name__)
@@ -95,33 +95,22 @@ class UserService(BaseService):
 
         logger.debug('UserService | profile: %s', profile)
 
-        user_type = profile.pop('type', None)
+        user_type = profile.get('type')
         if not user_type:
             msg = ('В  профиле не указан тип пользователя (type): '
                    'не возможно создать пользователя без указания его типа!')
             logger.error(msg)
             raise AttributeError(msg)
 
-        is_admin = extra_fields.get('is_admin', False)
-        is_staff = extra_fields.get('is_staff', False)
-        is_superuser = extra_fields.get('is_superuser', False)
-
         user = UserData.objects.create_user(
             email=email,
             password=password,
             number=number,
-            phones={},
-            comment='',
-            avatar=None,
-            inn=None,
-            is_admin=is_admin,
-            is_active=False,
-            is_staff=is_staff,
-            is_superuser=is_superuser
+            **extra_fields
         )
         logger.debug('Created user: %s', user)
 
-        profile = cls.create_user_profile(user, user_type, profile)
+        profile = cls.create_user_profile(user, profile)
         logger.debug('Created profile: %s', profile)
 
         return user
@@ -130,28 +119,24 @@ class UserService(BaseService):
     def create_user_profile(
             cls,
             user: UserData,
-            user_type: str,
             profile: dict
     ) -> UserProfile:
         """
         Создание профиля пользователя в зависимости от типа и пользователя с его профилем
 
-        Для профиля-организации нужно ввести: name
-        Для профиля-сотрудника: first_name, last_name, sex, birth_date
-
         Args:
             user: Модель пользователя
-            user_type: Тип пользователя: Worker, Tenant, Company
             profile: словарь с данными для создания профиля пользователя
 
         Returns: Профиль пользователя (UserProfile)
 
         """
-        if user_type == UserData.ORG:
+        user_type = profile.get('type')
+        if user_type == ORG:
             profile = cls.create_profile_company(user, profile)
-        elif user_type == UserData.TENANT:
+        elif user_type == TENANT:
             profile = cls.create_profile_tenant(user, profile)
-        elif user_type == UserData.WORKER:
+        elif user_type == WORKER:
             profile = cls.create_profile_worker(user, profile)
         else:
             msg = 'Указан не верный тип профиля пользователя!'
@@ -273,6 +258,8 @@ class UserService(BaseService):
         if is_correct_code:
             self.user.activation_code = None
             self.user.is_active = True
+            self.user.get_access_date = datetime.datetime.now()
+            self.user.save()
         else:
             msg = 'Не верный код активации'
             logger.error(msg)

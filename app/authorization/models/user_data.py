@@ -4,6 +4,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
+from config.settings import ORG, WORKER, TENANT
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,21 +36,10 @@ class UserManager(BaseUserManager):
 
 
 class UserData(AbstractUser):
-    # user types
-    ORG = 'company'
-    WORKER = 'worker'
-    TENANT = 'tenant'
-
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['password']
-
-    TYPE_CHOICES = (
-        (WORKER, 'Worker'),
-        (TENANT, 'Tenant'),
-        (ORG, 'Company'),
-    )
 
     # BASE FIELDS
     username = None  # поле удалено
@@ -124,11 +115,11 @@ class UserData(AbstractUser):
         """Возвращает тип пользователя"""
         types = []
         if hasattr(self, 'company_profile'):
-            types.append(self.ORG)
+            types.append(ORG)
         if hasattr(self, 'worker_profile'):
-            types.append(self.WORKER)
+            types.append(WORKER)
         if hasattr(self, 'tenant_profile'):
-            types.append(self.TENANT)
+            types.append(TENANT)
         return types
 
     @property
@@ -137,9 +128,9 @@ class UserData(AbstractUser):
 
     def get_full_name(self):
         assert len(self.profile) > 0, 'Пользователь не связан ни с одним профилем (такого не должно быть)!'
-        if self.type in (self.WORKER, self.TENANT):
+        if self.type in (WORKER, TENANT):
             return self.profile[0].first_name + ' ' + self.profile[0].last_name
-        elif self.type == self.ORG:
+        elif self.type == ORG:
             return self.profile[0].name
 
     @property

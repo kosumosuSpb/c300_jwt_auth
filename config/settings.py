@@ -213,3 +213,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # KAFKA
 KAFKA_URL = 'kafka://localhost:9094'
+
+# PROFILE TYPES
+ORG = 'company'
+WORKER = 'worker'
+TENANT = 'tenant'

@@ -26,11 +26,12 @@ class RegisterView(APIView):
     permission_classes = []
 
     def post(self, request: Request):
-        logger.debug('RegisterView - POST - request data: %s', request.data)
+        logger.debug('RegisterView | POST | request data: %s', request.data)
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        logger.debug('RegisterView | serializer.data: %s', serializer.data)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
 class UserDeleteView(APIView):
