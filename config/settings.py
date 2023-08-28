@@ -218,3 +218,7 @@ KAFKA_URL = 'kafka://localhost:9094'
 ORG = 'company'
 WORKER = 'worker'
 TENANT = 'tenant'
+
+# REGISTRATION
+ACTIVATION = False
+is_active = not ACTIVATION

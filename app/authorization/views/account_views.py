@@ -18,6 +18,8 @@ from rest_framework.permissions import IsAdminUser
 from app.authorization.models.user_data import UserData
 from app.authorization.serializers import UserSerializer
 from app.authorization.services.user_service import UserService
+from app.authorization.permissions import IsSuperuser
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ class PasswordChangeView(APIView):
 
 class ManualActivateAccountView(APIView):
     """Ручная активация аккаунта"""
-    permission_classes = [IsAdminUser]  # TODO: нужно дописать класс на суперпользователя?
+    permission_classes = [IsAdminUser, IsSuperuser]
 
     def post(self, request: Request, *args, **kwargs):
         logger.debug('ManualActivateAccountView | POST')
@@ -77,7 +79,8 @@ class ManualActivateAccountView(APIView):
             data = {
                 'status': 'ERROR',
                 'detail': 'Нет атрибута "user" в параметрах адресной строки!'
-                          ''}
+                          ''
+            }
             return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
         user_service = UserService(user)

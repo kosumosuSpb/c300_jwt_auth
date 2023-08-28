@@ -56,9 +56,6 @@ class CompanyService(BaseService):
 
         return department
 
-    def link_department_to_company(self, dep: Department, company: CompanyProfile):
-        """Связывание отдела с компанией"""
-
     @staticmethod
     def link_worker_to_department(
             worker: UserData | WorkerProfile,
