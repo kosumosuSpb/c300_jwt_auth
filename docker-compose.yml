@@ -10,6 +10,7 @@ services:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+
   kafka:
     image: bitnami/kafka:latest
     depends_on:
@@ -28,6 +29,7 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
 #      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://:9094
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+
   postgres:
     image: postgres:latest
     restart: always
@@ -41,5 +43,36 @@ services:
 #      - POSTGRES_DB=
 #      - POSTGRES_USER=
       - POSTGRES_PASSWORD=example
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
 #  auth_service:
+#    image: django:latest
+#    command: python manage.py runserver 0.0.0.0:8000
+#    volumes:
+#      - .:/app
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      - DEBUG=True
+#    depends_on:
+#      - redis
 #
+#  celery:
+#    image: django:latest
+#    command: celery -A your_project_name worker --loglevel=info
+#    volumes:
+#      - .:/app
+#    depends_on:
+#      - redis
+
+#  celery-beat:
+#    image: django:latest
+#    command: celery -A your_project_name beat --loglevel=info
+#    volumes:
+#      - .:/app
+#    depends_on:
+#      - redis

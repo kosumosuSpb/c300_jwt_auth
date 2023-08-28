@@ -1,4 +1,5 @@
 from app.authorization.services.base_service import BaseService
+from app.authorization.tasks import send_activate_email
 
 
 class EmailService(BaseService):
@@ -10,3 +11,4 @@ class EmailService(BaseService):
 
     def send(self):
         """Отправка почты"""
+        send_activate_email.delay()
