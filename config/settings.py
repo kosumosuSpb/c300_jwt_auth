@@ -215,14 +215,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 KAFKA_URL = 'kafka://localhost:9094'
 
 # CELERY CONFIG
-celery_broker_url = 'redis://localhost:6379/0'
-celery_result_backend = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
-celery_task_serializer = 'json'
-celery_result_serializer = 'json'
-celery_accept_content = ['json']
-celery_timezone = TIME_ZONE
-celery_enable_utc = True
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
 
 # PROFILE TYPES
 ORG = 'company'

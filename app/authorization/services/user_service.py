@@ -17,6 +17,7 @@ from app.authorization.models import (
     WorkerProfile,
     UserProfile
 )
+
 from config.settings import SIMPLE_JWT, ORG, TENANT, WORKER
 
 
@@ -256,6 +257,10 @@ class UserService(BaseService):
             raise KeyError(msg)
 
         return user_model
+
+    def send_activation_mail(self):
+        """Отправка письма с активацией"""
+
 
     def activate_user(self, activation_code: str):
         """Активация пользователя"""

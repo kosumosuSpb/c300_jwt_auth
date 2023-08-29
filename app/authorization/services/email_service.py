@@ -9,6 +9,6 @@ class EmailService(BaseService):
         self.login = login
         self.password = password
 
-    def send(self):
+    def send(self, address: str, theme: str):
         """Отправка почты"""
         send_activate_email.delay()

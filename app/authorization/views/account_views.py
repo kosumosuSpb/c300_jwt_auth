@@ -19,6 +19,7 @@ from app.authorization.models.user_data import UserData
 from app.authorization.serializers import UserSerializer
 from app.authorization.services.user_service import UserService
 from app.authorization.permissions import IsSuperuser
+from app.authorization.services.email_service import EmailService
 
 
 logger = logging.getLogger(__name__)
@@ -131,4 +132,10 @@ class TestView(APIView):
         logger.debug('TestView | request COOKIES: %s', request.COOKIES)
         logger.debug('TestView | request.user: %s', request.user)
         logger.debug('TestView | request.user.type: %s', type(request.user))
+        test_task = request.query_params.get('test_task')
+
+        if test_task:
+            email_service = EmailService('test_host', 'test_login', 'test_password')
+            email_service.send('test_address', 'activation')
+
         return Response(data={'status': 'OK'}, status=status.HTTP_200_OK)
