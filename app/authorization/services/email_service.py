@@ -20,11 +20,18 @@ class EmailService(BaseService):
         msg.send()
 
     @classmethod
-    def send_activation_email(cls, to: str, from_email=EMAIL_FROM):
+    def send_activation_email(
+            cls,
+            user_id: str | int,
+            to: str,
+            from_email=EMAIL_FROM
+    ):
         """Отправка письма активации с использованием шаблона"""
         text_content = "Пройдите по ссылке для активации вашего аккаунта"
         activation_code = cls.make_activation_code(to)
-        link = f'http://localhost:8000/api/v1/activate/{activation_code}'  # TODO: исправить на незахардкоженую ссылку
+        link = (f'http://localhost:8000/api/v1/activate/'
+                f'user_id={user_id}&'
+                f'activation_code={activation_code}')  # TODO: исправить на незахардкоженую ссылку
         html_content = f'<p>Пройдите по ссылке для активации вашего аккаунта: {link}</p>'
         subject = 'Ссылка для активации аккаунта'
 

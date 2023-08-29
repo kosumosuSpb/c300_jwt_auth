@@ -46,7 +46,7 @@ class RegisterView(APIView):
 
         if ACTIVATION:
             user.is_active = False
-            send_activation_mail.delay(user.email)
+            send_activation_mail.delay(user.pk, user.email)
 
         logger.debug('RegisterView | serializer.data: %s', serializer.data)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
@@ -136,6 +136,6 @@ class TestView(APIView):
         logger.debug('TestView | request data: %s', request.data)
         logger.debug('TestView | request COOKIES: %s', request.COOKIES)
         logger.debug('TestView | request.user: %s', request.user)
-        logger.debug('TestView | request.user.type: %s', type(request.user))
+        logger.debug('TestView | request.user type: %s', type(request.user))
 
         return Response(data={'status': 'OK'}, status=status.HTTP_200_OK)
