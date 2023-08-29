@@ -18,7 +18,13 @@ from app.authorization.models import (
     UserProfile
 )
 
-from config.settings import SIMPLE_JWT, ORG, TENANT, WORKER
+from config.settings import (
+    SIMPLE_JWT,
+    ORG,
+    TENANT,
+    WORKER,
+    ACTIVATION
+)
 
 
 logger = logging.getLogger(__name__)
@@ -257,10 +263,6 @@ class UserService(BaseService):
             raise KeyError(msg)
 
         return user_model
-
-    def send_activation_mail(self):
-        """Отправка письма с активацией"""
-
 
     def activate_user(self, activation_code: str):
         """Активация пользователя"""
