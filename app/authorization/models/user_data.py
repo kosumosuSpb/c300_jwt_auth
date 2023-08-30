@@ -62,12 +62,14 @@ class UserData(AbstractUser):
     )
 
     is_admin = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)  # аналог has_access из с300
-    is_staff = models.BooleanField(default=False)  # возможно, не нужно
-    is_superuser = models.BooleanField(default=False)
+
+    # эти поля наследованы
+    # is_active = models.BooleanField(default=True)  # аналог has_access из с300
+    # is_staff = models.BooleanField(default=False)  # возможно, не нужно
+    # is_superuser = models.BooleanField(default=False)
 
     activation_code = models.CharField(
-        max_length=50,
+        max_length=100,
         null=True,
         blank=True,
         verbose_name='Код активации'

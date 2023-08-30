@@ -35,16 +35,11 @@ class TenantProfileSerializer(serializers.ModelSerializer):
         exclude = ['user']
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserRegistrationSerializer(serializers.Serializer):
+    """Валидация данных пользователя при регистрации"""
+    email = serializers.EmailField(max_length=100)
+    password = serializers.CharField(max_length=128, write_only=True)
     profile = serializers.JSONField()
-
-    class Meta:
-        model = UserData
-        exclude = ['user_permissions', 'groups']
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'activation_code': {'write_only': True},
-        }
 
     def validate_profile(self, profile: dict):
         """Валидация поля профиля"""
@@ -68,6 +63,18 @@ class UserSerializer(serializers.ModelSerializer):
                      profile_serializer.validated_data)
 
         return profile
+
+
+class UserEditSerializer(serializers.ModelSerializer):
+    """Сериалайзер для валидации данных при изменении данных о пользователе"""
+
+    class Meta:
+        model = UserData
+        exclude = ['user_permissions', 'groups', 'is_active']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'activation_code': {'write_only': True},
+        }
 
 
 class DepartmentSerializer(serializers.ModelSerializer):

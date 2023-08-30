@@ -34,6 +34,10 @@ class UserServiceException(Exception):
     pass
 
 
+class ActivationError(UserServiceException):
+    pass
+
+
 class UserService(BaseService):
     """Управление пользователем и его профилем"""
     def __init__(self, user_id_or_token: str | int | UserData):
@@ -108,6 +112,8 @@ class UserService(BaseService):
                    'не возможно создать пользователя без указания его типа!')
             logger.error(msg)
             raise AttributeError(msg)
+
+        logger.debug('EXTRA FIELDS: %s', extra_fields)
 
         user = UserData.objects.create_user(
             email=email,
@@ -266,10 +272,21 @@ class UserService(BaseService):
 
     def activate_user(self, activation_code: str):
         """Активация пользователя"""
+        logger.debug('Запущена активация пользователя %s', self.user)
+
+        if not self.user.activation_code:
+            msg = 'Нет кода активации у пользователя, возможно, он уже активирован'
+            logger.error(msg)
+            raise ActivationError(msg)
+
         is_correct_code = self.user.activation_code == activation_code
 
         if is_correct_code:
             self.user.activation_code = None
+
+            if self.user.is_active:
+                logger.warning('Пользователь %s уже был активен', self.user)
+
             self.user.is_active = True
             self.user.get_access_date = datetime.datetime.now()
             self.user.save()

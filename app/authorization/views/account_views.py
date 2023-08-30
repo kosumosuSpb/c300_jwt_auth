@@ -16,10 +16,15 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 
 from app.authorization.models.user_data import UserData
-from app.authorization.serializers import UserSerializer
-from app.authorization.services.user_service import UserService
+from app.authorization.serializers import UserRegistrationSerializer
+from app.authorization.services.user_service import (
+    UserService,
+    UserServiceException,
+    ActivationError
+)
 from app.authorization.permissions import IsSuperuser
 from app.authorization.tasks import send_activation_mail
+from app.authorization.services.secure import make_activation_code
 from config.settings import ACTIVATION
 
 
@@ -33,11 +38,13 @@ class RegisterView(APIView):
 
     def post(self, request: Request):
         logger.debug('RegisterView | POST | request data: %s', request.data)
-        serializer = UserSerializer(data=request.data)
+        serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user_validated_data: dict = serializer.validated_data
         password = user_validated_data.get('password', None)
+
+        logger.debug('SERIALIZER VALIDATED DATA: %s', user_validated_data)
 
         user: UserData = UserService.create_user(**user_validated_data)
 
@@ -45,8 +52,11 @@ class RegisterView(APIView):
         user.save()
 
         if ACTIVATION:
+            logger.debug('Email activation is active, send activation code...')
             user.is_active = False
-            send_activation_mail.delay(user.pk, user.email)
+            user.activation_code = make_activation_code(user.email)
+            send_activation_mail.delay(user.pk, user.email, user.activation_code)
+            user.save()
 
         logger.debug('RegisterView | serializer.data: %s', serializer.data)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
@@ -99,7 +109,10 @@ class ManualActivateAccountView(APIView):
 
 
 class ActivateAccountView(APIView):
-    def post(self, request: Request, *args, **kwargs):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request: Request, *args, **kwargs):
         logger.debug('ActivateAccountView')
 
         query_params = request.query_params
@@ -119,19 +132,23 @@ class ActivateAccountView(APIView):
             user_service = UserService(user_id)
             user_service.activate_user(activation_code)
         except TypeError as te:
-            return Response(data={'status': 'FAIL', 'detail': te},
+            return Response(data={'status': 'FAIL', 'detail': str(te)},
                             status=status.HTTP_400_BAD_REQUEST)
         except KeyError as le:
-            return Response(data={'status': 'FAIL', 'detail': le},
+            return Response(data={'status': 'FAIL', 'detail': str(le)},
                             status=status.HTTP_404_NOT_FOUND)
         except ValueError as ve:
-            return Response(data={'status': 'FAIL', 'detail': ve},
+            return Response(data={'status': 'FAIL', 'detail': str(ve)},
                             status=status.HTTP_404_NOT_FOUND)
+        except ActivationError as ae:
+            return Response(data={'status': 'ERROR', 'detail': str(ae)},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         return Response(data={'status': 'OK'}, status=status.HTTP_202_ACCEPTED)
 
 
 class TestView(APIView):
+
     def post(self, request: Request, *args, **kwargs):
         logger.debug('TestView | request data: %s', request.data)
         logger.debug('TestView | request COOKIES: %s', request.COOKIES)

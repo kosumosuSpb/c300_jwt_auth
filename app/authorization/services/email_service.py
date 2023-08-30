@@ -1,15 +1,20 @@
+import logging
+
 from django.core.mail import EmailMultiAlternatives
-from django.core.signing import Signer
 
 from app.authorization.services.base_service import BaseService
-from config.settings import EMAIL_FROM
+from app.authorization.services.secure import make_activation_code
+from config.settings import DEFAULT_FROM_EMAIL
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmailService(BaseService):
     """Сервис для работы с почтой"""
 
     @staticmethod
-    def send(to: str, subject: str, message: str, from_email=EMAIL_FROM):
+    def send(to: str, subject: str, message: str, from_email=DEFAULT_FROM_EMAIL):
         """Отправка почты"""
         msg = EmailMultiAlternatives(
             subject,
@@ -24,16 +29,19 @@ class EmailService(BaseService):
             cls,
             user_id: str | int,
             to: str,
-            from_email=EMAIL_FROM
+            code: str,
+            from_email=DEFAULT_FROM_EMAIL
     ):
         """Отправка письма активации с использованием шаблона"""
-        text_content = "Пройдите по ссылке для активации вашего аккаунта"
-        activation_code = cls.make_activation_code(to)
-        link = (f'http://localhost:8000/api/v1/activate/'
+        logger.debug('send_activation_email')
+
+        link = (f'http://localhost:8000/api/v1/activate/?'
                 f'user_id={user_id}&'
-                f'activation_code={activation_code}')  # TODO: исправить на незахардкоженую ссылку
+                f'activation_code={code}')  # TODO: исправить на незахардкоженую ссылку
+
+        subject = f'Ссылка для активации аккаунта {user_id}:{to}'
         html_content = f'<p>Пройдите по ссылке для активации вашего аккаунта: {link}</p>'
-        subject = 'Ссылка для активации аккаунта'
+        text_content = f"Пройдите по ссылке для активации вашего аккаунта: {link}"
 
         msg = EmailMultiAlternatives(
             subject,
@@ -41,15 +49,5 @@ class EmailService(BaseService):
             from_email,
             [to])
         msg.attach_alternative(html_content, "text/html")
-        msg.content_subtype = "html"
         msg.send()
-
-    @staticmethod
-    def make_activation_code(string: str) -> str:
-        """Создание кода активации"""
-        signer = Signer()
-        signed_value = signer.sign(string)
-
-        return signed_value
-
-
+        logger.debug('Письмо со ссылкой активации отправлено')

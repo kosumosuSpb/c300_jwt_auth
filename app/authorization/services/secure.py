@@ -1,4 +1,5 @@
 import logging
+import secrets
 
 from django.middleware import csrf
 from rest_framework.response import Response
@@ -88,3 +89,10 @@ def del_auth_cookies(response: Response, delete_csrf=True) -> Response:
     # TODO: нужно добавлять токены в блок
 
     return response
+
+
+def make_activation_code(length: int | None = None) -> str:
+    """Создание кода активации"""
+    code = secrets.token_hex(length // 2)
+    logger.debug('Сгенерирован код активации: %s', code)
+    return code
