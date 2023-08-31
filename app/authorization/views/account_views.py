@@ -52,9 +52,9 @@ class RegisterView(APIView):
         user.save()
 
         if ACTIVATION:
-            logger.debug('Email activation is active, send activation code...')
+            logger.debug('Включена активация, генерируем код и отправляет по почте...')
             user.is_active = False
-            user.activation_code = make_activation_code(user.email)
+            user.activation_code = make_activation_code()
             send_activation_mail.delay(user.pk, user.email, user.activation_code)
             user.save()
 

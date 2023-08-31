@@ -93,6 +93,7 @@ def del_auth_cookies(response: Response, delete_csrf=True) -> Response:
 
 def make_activation_code(length: int | None = None) -> str:
     """Создание кода активации"""
+    length = length or 20
     code = secrets.token_hex(length // 2)
     logger.debug('Сгенерирован код активации: %s', code)
     return code

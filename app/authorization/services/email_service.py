@@ -39,7 +39,7 @@ class EmailService(BaseService):
                 f'user_id={user_id}&'
                 f'activation_code={code}')  # TODO: исправить на незахардкоженую ссылку
 
-        subject = f'Ссылка для активации аккаунта {user_id}:{to}'
+        subject = f'Ссылка для активации аккаунта {to}'
         html_content = f'<p>Пройдите по ссылке для активации вашего аккаунта: {link}</p>'
         text_content = f"Пройдите по ссылке для активации вашего аккаунта: {link}"
 
