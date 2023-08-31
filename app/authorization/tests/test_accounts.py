@@ -1,7 +1,5 @@
 import sys
 import logging
-import datetime
-from http.cookies import Morsel
 
 import requests
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -12,9 +10,6 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from app.authorization.models import *
-# from app.authorization.models.user_data import UserData
-# from app.authorization.models.company_profile import CompanyProfile, Department
-from app.authorization.services.user_service import UserService
 from app.authorization.services.company_service import CompanyService
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 from app.authorization.tests.base_testcase import BaseTestCase
@@ -76,7 +71,12 @@ class TestAccount(BaseTestCase):
         logger.debug('test_invalid_email')
         data = {'email': 'some_invalid@email.com', 'password': self.password}
         headers = {"accept": "application/json"}
-        response = self.client.post(self.login_url, data=data, headers=headers)
+        response = self.client.post(
+            self.login_url,
+            data=data,
+            headers=headers,
+            content_type="application/json"
+        )
 
         self.assertEqual(401, response.status_code)
 
@@ -84,7 +84,12 @@ class TestAccount(BaseTestCase):
         logger.debug('test_invalid_password')
         data = {'email': self.email, 'password': self.password + 'h'}
         headers = {"accept": "application/json"}
-        response = self.client.post(self.login_url, data=data, headers=headers)
+        response = self.client.post(
+            self.login_url,
+            data=data,
+            headers=headers,
+            content_type="application/json"
+        )
 
         self.assertEqual(401, response.status_code)
 
@@ -101,9 +106,16 @@ class TestAccount(BaseTestCase):
         department = self._create_department(profile)
         self.assertIsInstance(department, Department)
 
-    def test_create_worker(self):
+    def test_create_worker_male(self):
         logger.debug('test_create_worker')
         user_worker = self._create_worker()
+        self.assertIsInstance(user_worker, UserData)
+        self.assertTrue(hasattr(user_worker, 'worker_profile'))
+        self.assertIsInstance(user_worker.worker_profile, WorkerProfile)
+
+    def test_create_worker_female(self):
+        logger.debug('test_create_worker')
+        user_worker = self._create_worker(sex='female')
         self.assertIsInstance(user_worker, UserData)
         self.assertTrue(hasattr(user_worker, 'worker_profile'))
         self.assertIsInstance(user_worker.worker_profile, WorkerProfile)
@@ -123,8 +135,9 @@ class TestAccount(BaseTestCase):
 
     def test_create_already_created_user(self):
         logger.debug('test_register_already_registered_user')
+        self._create_worker()
         with self.assertRaises(ValidationError):
-            UserService.create_user(UserData.TENANT, self.email, self.password)
+            self._create_worker()
 
     def test_create_user_with_wrong_email(self):
         logger.debug('test_create_user_with_wrong_email')
@@ -141,12 +154,16 @@ class TestAccount(BaseTestCase):
 
         cookies = {self.refresh_token_name: refresh_token}
         response = self.client.post(self.refresh_url, cookies=cookies)
+
+        self.assertEqual(response.status_code, 200)
         new_access_token = response.cookies.get(self.access_token_name)
+        self.assertTrue(bool(new_access_token))
         self.assertNotEqual(access_token, new_access_token)
 
         if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
             logger.debug('ROTATE_REFRESH_TOKENS is True, check refresh token')
             new_refresh_token = response.cookies.get(self.refresh_token_name)
+            self.assertTrue(bool(new_refresh_token))
             self.assertNotEqual(refresh_token, new_refresh_token)
 
     def test_csrf_token_in_cookies(self):

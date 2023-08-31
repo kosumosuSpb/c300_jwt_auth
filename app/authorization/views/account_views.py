@@ -37,7 +37,13 @@ class RegisterView(APIView):
     permission_classes = []
 
     def post(self, request: Request):
-        logger.debug('RegisterView | POST | request data: %s', request.data)
+        logger.debug('RegisterView | POST | request data: %s',
+                     request.data)
+        if 'profile' in request.data:
+            logger.debug('RegisterView | POST | request data as dict: %s', dict(request.data))
+            logger.debug('email: %s', request.data.get('email'))
+            logger.debug('profile: %s', request.data.get('profile'))
+
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
