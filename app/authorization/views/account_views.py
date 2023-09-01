@@ -58,7 +58,7 @@ class RegisterView(APIView):
         user.save()
 
         if ACTIVATION:
-            logger.debug('Включена активация, генерируем код и отправляет по почте...')
+            logger.debug('Включена активация, генерируем код и отправляем по почте...')
             user.is_active = False
             user.activation_code = make_activation_code()
             send_activation_mail.delay(user.pk, user.email, user.activation_code)
@@ -126,10 +126,12 @@ class ActivateAccountView(APIView):
         user_id = query_params.get('user_id')
 
         if not all([activation_code, user_id]):
+            msg = 'Не хватает кода активации, либо user_id'
+            logger.error(msg)
             return Response(
                 data={
                     'status': 'BAD_REQUEST',
-                    'detail': 'Не хватает кода активации, либо user_id'
+                    'detail': msg
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )

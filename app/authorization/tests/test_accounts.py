@@ -10,7 +10,9 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from app.authorization.models import *
+from app.authorization.services.secure import make_activation_code
 from app.authorization.services.company_service import CompanyService
+from app.authorization.services.user_service import UserService
 from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 from app.authorization.tests.base_testcase import BaseTestCase
 
@@ -143,6 +145,20 @@ class TestAccount(BaseTestCase):
         logger.debug('test_create_user_with_wrong_email')
         with self.assertRaises(ValidationError):
             user_tenant = self._create_tenant(email='aerg')
+
+    def test_activation(self):
+        """Тест активации"""
+        user: UserData = UserData.objects.get(email=self.email)
+        activation_code = make_activation_code()
+        user.activation_code = activation_code
+        user.is_active = False
+        user.save()
+
+        user_service = UserService(user)
+        user_service.activate_user(activation_code)
+
+        self.assertTrue(user.is_active)
+        self.assertIsNone(user.activation_code)
 
     # TOKENS TESTS
 
