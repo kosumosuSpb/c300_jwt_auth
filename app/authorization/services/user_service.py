@@ -217,12 +217,34 @@ class UserService(BaseService):
         self.user.is_deleted = True
         self.user.is_active = False
 
-    def delete_user(self):
+    def delete_user(self, user: UserData | None = None):
         """Удаление текущего пользователя"""
-        logger.debug('Запущено удаление пользователя %s', self.user)
-        self.user.delete()
-        logger.debug('Пользователь %s успешно удалён', self.user)
-        return
+        user = user or self.user
+        self._delete_user(user)
+
+    @staticmethod
+    def _delete_user(user: UserData):
+        logger.debug('Запущено удаление пользователя %s', user)
+
+        profiles: list[UserProfile] = user.profiles
+
+        for profile in profiles:
+            logger.debug('Удаление профиля %s', profile)
+            profile.delete()
+
+        user.delete()
+        logger.debug('Пользователь %s успешно удалён', user)
+
+    @classmethod
+    def __purge_users(cls):
+        """Удаляет всех пользователей и все профили из БД"""
+        logger.warning('ВНИМАНИЕ, ЗАПУЩЕНО УДАЛЕНИЕ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ И ПРОФИЛЕЙ!')
+        users: list[UserData] = UserData.objects.all()
+
+        for user in users:
+            cls._delete_user(user)
+
+        logger.warning('ВСЕ ПОЛЬЗОВАТЕЛИ И ПРОФИЛИ УДАЛЕНЫ ИЗ БД')
 
     @classmethod
     def get_user_id_from_token(cls, token: str) -> int | None:

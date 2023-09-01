@@ -129,14 +129,14 @@ class UserData(AbstractUser):
         return self.get_full_name()
 
     def get_full_name(self):
-        assert len(self.profile) > 0, 'Пользователь не связан ни с одним профилем (такого не должно быть)!'
+        assert len(self.profiles) > 0, 'Пользователь не связан ни с одним профилем (такого не должно быть)!'
         if self.type in (WORKER, TENANT):
-            return self.profile[0].first_name + ' ' + self.profile[0].last_name
+            return self.profiles[0].first_name + ' ' + self.profiles[0].last_name
         elif self.type == ORG:
-            return self.profile[0].name
+            return self.profiles[0].name
 
     @property
-    def profile(self) -> list:
+    def profiles(self) -> list:
         """Возвращает профили пользователя"""
         profiles = []
         if hasattr(self, 'company_profile'):
