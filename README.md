@@ -5,6 +5,7 @@
 [a07b09f](https://github.com/kosumosuSpb/c300_jwt_auth/commit/a07b09f9b5c6cbb1394a342b6f6d6d1447b71fba) - последний коммит с токенами не через куки
 
 Основан на: 
+* Python 3.11
 * Django 4.2
 * DRF
 * Simple JWT
@@ -13,9 +14,11 @@
 * zookeeper + kafka в докере 
 * python-kafka 2.0.2
 * PostgreSQL (https://hub.docker.com/_/postgres)
+* celery
+* redis
 
 
-## Схема БД
+## Схема связей БД
 
 ![Диаграмма БД](./readme_dir/db_diagram.png "Диаграмма БД")
 
@@ -39,11 +42,22 @@
     DJANGO_SETTINGS_MODULE=config.settings
     SECRET_KEY=
     
-    DB_NAME=postgres
-    DB_USERNAME=postgres
+    DB_NAME=
+    DB_USERNAME=
     DB_HOST=localhost
     DB_PORT=5432
     DB_PASS=example
+    
+    CELERY_BROKER_URL=redis://localhost:6379/0
+    CELERY_RESULT_BACKEND=redis://localhost:6379/0
+    
+    KAFKA_URL=kafka://localhost:9094
+    
+    DEFAULT_FROM_EMAIL=
+    EMAIL_HOST=
+    EMAIL_PORT=
+    EMAIL_HOST_USER=
+    EMAIL_HOST_PASSWORD=
 
 ### Тестовый запуск Django
 
@@ -57,6 +71,12 @@
 
     faust -A config.faust_app:app worker -l info
 
+### Запуск Celery
+
+Redis уже будет работать в контейнере после `docker-compose up`, либо можно запустить его отдельно: `docker-compose up redis`
+
+    celery -A config.celery_app worker --loglevel=info
+
 ### Отправка тестовых данных
 
 Чтобы получить токены доступа и обновления, нужно создать пользователя. 
@@ -69,12 +89,12 @@
 
 #### Регистрация пользователя: 
 
+После регистрации через `celery` будет отправлено письмо со ссылкой активации.
+
     curl --location 'http://localhost:8000/api/v1/register/' \
-    --form 'email="another@email.go"' \
-    --form 'username="another_user"' \
-    --form 'password="pwdtoanotheruser"' \
-    --form 'name="MyNameIs"' \
-    --form 'type="W"'
+    --form 'email="some@email.ee"' \
+    --form 'password="ghbdtn007"' \
+    --form 'profile="{\"type\": \"worker\", \"first_name\": \"Роман\", \"last_name\": \"Романов\", \"birth_date\": \"2000-08-25T12:00:00+03:00\", \"sex\": \"male\"}"'
 
 #### Запрос на логин:
 
