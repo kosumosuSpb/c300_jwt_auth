@@ -236,10 +236,14 @@ class UserService(BaseService):
         logger.debug('Пользователь %s успешно удалён', user)
 
     @classmethod
-    def __purge_users(cls):
+    def _purge_users(cls):
         """Удаляет всех пользователей и все профили из БД"""
         logger.warning('ВНИМАНИЕ, ЗАПУЩЕНО УДАЛЕНИЕ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ И ПРОФИЛЕЙ!')
         users: list[UserData] = UserData.objects.all()
+
+        if not users:
+            logger.debug('Пользователи в БД не найдены')
+            return
 
         for user in users:
             cls._delete_user(user)
