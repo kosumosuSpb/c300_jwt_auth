@@ -4,6 +4,7 @@ import datetime
 
 import jwt
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
@@ -57,7 +58,7 @@ class UserService(BaseService):
             user_model = cls._get_user_from_token(user_id_or_token)
         return user_model
 
-    def get_permissions(self):
+    def get_permissions(self) -> dict:
         """Возвращает права пользователя. Демонстрационно: в реальности пока бесполезно"""
         permissions_set = self.user.get_user_permissions()
         permissions = {perm: self.user.has_perm(perm) for perm in permissions_set}
@@ -237,9 +238,14 @@ class UserService(BaseService):
 
     @classmethod
     def _purge_users(cls):
-        """Удаляет всех пользователей и все профили из БД"""
+        """
+        Удаляет всех пользователей и все профили из БД.
+        Использовать только на тестовой базе
+        с не большим количеством пользователей!
+
+        """
         logger.warning('ВНИМАНИЕ, ЗАПУЩЕНО УДАЛЕНИЕ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ И ПРОФИЛЕЙ!')
-        users: list[UserData] = UserData.objects.all()
+        users: QuerySet[UserData] = UserData.objects.all()
 
         if not users:
             logger.debug('Пользователи в БД не найдены')

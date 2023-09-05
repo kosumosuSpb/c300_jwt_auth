@@ -95,17 +95,16 @@ class ManualActivateAccountView(APIView):
 
     def post(self, request: Request, *args, **kwargs):
         logger.debug('ManualActivateAccountView | POST')
-        user = request.query_params.get('user')
+        user_id = request.query_params.get('user_id')
 
-        if not user:
+        if not user_id:
             data = {
                 'status': 'ERROR',
                 'detail': 'Нет атрибута "user" в параметрах адресной строки!'
-                          ''
             }
             return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
-        user_service = UserService(user)
+        user_service = UserService(user_id)
         user_service.manual_activate_user()
 
         return Response(
