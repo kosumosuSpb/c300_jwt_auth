@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
-from app.authorization.models.permissions_models import BaseCustomPermissionModel
+from app.authorization.models.permissions_models import CustomPermissionModel
 from config.settings import ORG, WORKER, TENANT
 
 
@@ -78,7 +78,7 @@ class UserData(AbstractUser):
 
     # RELATIONS
     permissions = models.ManyToManyField(
-        BaseCustomPermissionModel,
+        CustomPermissionModel,
         related_name='users_with_permission'
     )
     # company_profile
@@ -122,22 +122,30 @@ class UserData(AbstractUser):
         """Возвращает тип пользователя"""
         types = []
         if hasattr(self, 'company_profile'):
-            types.append(ORG)
+            types.append(self.company_profile.type)
         if hasattr(self, 'worker_profile'):
-            types.append(WORKER)
+            types.append(self.worker_profile.type)
         if hasattr(self, 'tenant_profile'):
-            types.append(TENANT)
+            types.append(self.tenant_profile.type)
         return types
+
+    @property
+    def types(self) -> list:
+        return self.type
 
     @property
     def full_name(self):
         return self.get_full_name()
 
+    @property
+    def all_permissions(self):
+        return list(self.permissions.all())
+
     def get_full_name(self):
         assert len(self.profiles) > 0, 'Пользователь не связан ни с одним профилем (такого не должно быть)!'
-        if self.type in (WORKER, TENANT):
+        if WORKER in self.types or TENANT in self.types:
             return self.profiles[0].first_name + ' ' + self.profiles[0].last_name
-        elif self.type == ORG:
+        elif ORG in self.types:
             return self.profiles[0].name
 
     @property

@@ -6,7 +6,7 @@ from django.db import models
 logger = logging.getLogger(__name__)
 
 
-class BaseCustomPermissionModel(models.Model):
+class CustomPermissionModel(models.Model):
     """Базовая модель прав"""
     class Meta:
         db_table = "authorization_permissions"
@@ -19,36 +19,53 @@ class BaseCustomPermissionModel(models.Model):
     ACTIONS = [CREATE, READ, UPDATE, DELETE]
 
     TYPE_CHOICES = (
-        ('c', CREATE),
-        ('r', READ),
-        ('u', UPDATE),
-        ('d', DELETE)
+        ('create', CREATE),
+        ('read', READ),
+        ('update', UPDATE),
+        ('delete', DELETE)
     )
 
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES)
+    type = models.CharField(max_length=6, choices=TYPE_CHOICES)
     name = models.CharField(max_length=150)
     desc = models.CharField(max_length=255, blank=True, null=True)
-    # permissions_groups - M2M link to perm groups
+    # permissions_groups - M2M link with perm groups
+    # users_with_permission - M2M link with user_data
 
     @property
     def description(self):
         return self.desc
 
     def __str__(self):
-        return f'<Perm | {self.type} | {self.name}>'
+        return f'<Perm | {self.name} | {self.type}>'
 
     def __repr__(self):
-        return f'<Perm | {self.type} | {self.name}>'
+        return f'<Perm | {self.name} | {self.type}>'
 
     @classmethod
-    def create_permissions(cls, name: str, desc: str | None = None):
-        """Создаёт CRUD права доступа"""
+    def create_permissions(cls, name: str, desc_start='Can') -> list:
+        """
+        Создаёт CRUD права
+
+        Args:
+            name: Имя права
+            desc_start: Начало строки описания - по-умолчанию "Can",
+                например: "Can read something"
+
+        Returns:
+            list, Список созданных прав
+        """
+        crud_perms = []
 
         for action in cls.ACTIONS:
-            logger.debug('Создание права для %s %s', action, name)
-            desc = desc or f'Can {action.lower()} {name}'
+            # logger.debug('Создание права для %s %s', action, name)
+            action = action.lower()
+            desc = f'{desc_start} {action} {name}'
+            # logger.debug('name: %s, action: %s, desc: %s', name, action, desc)
             perm = cls.objects.create(name=name, type=action, desc=desc)
-            logger.debug('Создано право: %s', perm)
+            crud_perms.append(perm)
+
+        logger.debug('Созданы права: %s', crud_perms)
+        return crud_perms
 
 
 class PermissionGroup(models.Model):
@@ -67,7 +84,7 @@ class PermissionGroup(models.Model):
     name = models.CharField(max_length=100)
     desc = models.CharField(max_length=255, blank=True, null=True)
     permissions = models.ManyToManyField(
-        BaseCustomPermissionModel,
+        CustomPermissionModel,
         related_name='permissions_groups'
     )
 

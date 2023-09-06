@@ -16,7 +16,8 @@ from app.authorization.models import (
     Department,
     TenantProfile,
     WorkerProfile,
-    UserProfile
+    UserProfile,
+    CustomPermissionModel
 )
 
 from config.settings import (
@@ -194,6 +195,18 @@ class UserService(BaseService):
     def update_email(self):
         """Обновление (изменение) адреса электронной почты"""
         pass
+
+    def add_permissions(self, perms: list | tuple):
+        """Добавление списка прав пользователю"""
+        logger.debug('Добавление прав пользователю %s', self.user)
+        assert isinstance(perms, (list, tuple)), 'perms должен быть списком или кортежем!'
+        self.user.permissions.add(*perms)
+
+    def add_permission(self, perm):
+        """Добавление одного права пользователю"""
+        logger.debug('Добавление прав пользователю %s', self.user)
+        assert isinstance(perm, CustomPermissionModel), 'perm должен быть объектом CustomPermissionModel!'
+        self.user.permissions.add(perm)
 
     @staticmethod
     def _get_number() -> str:
