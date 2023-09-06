@@ -61,12 +61,16 @@ class UserService(BaseService):
 
     def get_permissions(self) -> dict:
         """Возвращает права пользователя. Демонстрационно: в реальности пока бесполезно"""
-        permissions_set = self.user.get_user_permissions()
-        permissions = {perm: self.user.has_perm(perm) for perm in permissions_set}
+        permissions = {f'{perm.name} {perm.type}': True for perm in self.user.all_permissions}
+
+        django_permissions_set = self.user.get_user_permissions()
+        django_permissions = {perm: self.user.has_perm(perm) for perm in django_permissions_set}
 
         is_list = [field.name for field in self.user._meta.fields if field.name.startswith('is_')]
         flags = {field: getattr(self.user, field) for field in is_list}
+
         permissions.update(flags)
+        permissions.update(django_permissions)
         return permissions
 
     @staticmethod
