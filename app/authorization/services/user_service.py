@@ -4,7 +4,7 @@ import datetime
 
 import jwt
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Prefetch
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
@@ -46,18 +46,21 @@ class UserService(BaseService):
         self.user: UserData = self.get_user(user_id_or_token)
 
     @classmethod
-    def get_user(cls, user_id_or_token: str | int) -> UserData | None:
+    def get_user(cls, user: str | int) -> UserData | None:
         """Вернёт модель пользователя UserData"""
-        is_user_data = isinstance(user_id_or_token, UserData)
-        is_num = isinstance(user_id_or_token, int) or (isinstance(user_id_or_token, str) and user_id_or_token.isdecimal())
+        is_user_data = isinstance(user, UserData)
+        is_email = isinstance(user, str) and '@' in user
+        is_num = isinstance(user, int) or (isinstance(user, str) and user.isdecimal())
 
         if is_user_data:
-            user_model = user_id_or_token
+            user_data = user
         elif is_num:
-            user_model = cls._get_user_from_user_id(user_id_or_token)
+            user_data = cls._get_user_from_user_id(user)
+        elif is_email:
+            user_data = cls._get_user_from_email(user)
         else:
-            user_model = cls._get_user_from_token(user_id_or_token)
-        return user_model
+            user_data = cls._get_user_from_token(user)
+        return user_data
 
     def get_permissions(self) -> dict:
         """Возвращает права пользователя. Демонстрационно: в реальности пока бесполезно"""
@@ -212,6 +215,11 @@ class UserService(BaseService):
         assert isinstance(perm, CustomPermissionModel), 'perm должен быть объектом CustomPermissionModel!'
         self.user.permissions.add(perm)
 
+    def check_parent_perms(self, perms: list):
+        """Проверяет соответствие разрешений разрешениям родителя"""
+        if self.user.type[0] == WORKER:
+            parent_perms = self.user.worker_profile.department.company.permissions.all()
+
     @staticmethod
     def _get_number() -> str:
         """Временная реализация метода получения уникального номера для пользователя"""
@@ -311,13 +319,30 @@ class UserService(BaseService):
 
         user_id = int(user_id)
         try:
-            user_model = UserData.objects.get(pk=user_id)
+            user_data = UserData.objects.get(pk=user_id)
         except ObjectDoesNotExist as dne:
             msg = f'Пользователь с id {user_id} не найден: {dne}'
             logger.error(msg)
             raise KeyError(msg)
 
-        return user_model
+        return user_data
+
+    @staticmethod
+    def _get_user_from_email(email: str) -> UserData | None:
+        """Вернёт пользователя по email"""
+        if not isinstance(email, str,):
+            msg = 'Не верный тип email! должен быть str'
+            logger.error(msg)
+            raise TypeError(msg)
+
+        try:
+            user_data = UserData.objects.get(email=email)
+        except ObjectDoesNotExist as dne:
+            msg = f'Пользователь с id {email} не найден: {dne}'
+            logger.error(msg)
+            raise KeyError(msg)
+
+        return user_data
 
     def activate_user(self, activation_code: str):
         """Активация пользователя"""

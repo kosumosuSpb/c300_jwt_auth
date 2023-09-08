@@ -239,4 +239,4 @@ WORKER = 'worker'
 TENANT = 'tenant'
 
 # REGISTRATION
-ACTIVATION = True
+ACTIVATION = os.getenv('ACTIVATION')

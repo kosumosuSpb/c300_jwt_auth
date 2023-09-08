@@ -2,6 +2,12 @@ import logging
 
 from django.db import models
 
+from app.authorization.models import (
+    CompanyProfile,
+    WorkerProfile,
+    TenantProfile
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +34,19 @@ class CustomPermissionModel(models.Model):
     type = models.CharField(max_length=6, choices=TYPE_CHOICES)
     name = models.CharField(max_length=150)
     desc = models.CharField(max_length=255, blank=True, null=True)
+    workers = models.ManyToManyField(
+        WorkerProfile,
+        related_name='permissions'
+    )
+    tenants = models.ManyToManyField(
+        TenantProfile,
+        related_name='permissions'
+    )
+    companies = models.ManyToManyField(
+        CompanyProfile,
+        related_name='permissions'
+    )
     # permissions_groups - M2M link with perm groups
-    # users_with_permission - M2M link with user_data
 
     @property
     def description(self):

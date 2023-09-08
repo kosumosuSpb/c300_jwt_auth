@@ -12,7 +12,7 @@ LOGGING = {
         },
         'simple': {
             'class': 'logging.Formatter',
-            'format': '%(levelname)s %(message)s',
+            'format': '%(levelname)s >> %(message)s',
         },
         'base': {
             'format': (
@@ -57,7 +57,11 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'level': 'DEBUG',
             'formatter': 'base',
-            # 'formatter': 'base',
+        },
+        'console_short': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'formatter': 'simple',
         },
     },
 
@@ -76,6 +80,11 @@ LOGGING = {
             'handlers': ['console'],
             'propagate': False,
             'level': 'INFO',
+        },
+        'django.db.backends': {
+            'handlers': ['console_short'],
+            'propagate': False,
+            'level': 'DEBUG',
         },
     },
 }

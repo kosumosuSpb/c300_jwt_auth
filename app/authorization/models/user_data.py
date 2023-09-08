@@ -4,7 +4,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
-from app.authorization.models.permissions_models import CustomPermissionModel
 from config.settings import ORG, WORKER, TENANT
 
 
@@ -77,10 +76,6 @@ class UserData(AbstractUser):
     )
 
     # RELATIONS
-    permissions = models.ManyToManyField(
-        CustomPermissionModel,
-        related_name='users_with_permission'
-    )
     # company_profile
     # worker_profile
     # tenant_profile
