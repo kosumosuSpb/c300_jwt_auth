@@ -118,10 +118,12 @@ class UserData(AbstractUser):
         types = []
         if hasattr(self, 'company_profile'):
             types.append(self.company_profile.type)
-        if hasattr(self, 'worker_profile'):
-            types.append(self.worker_profile.type)
-        if hasattr(self, 'tenant_profile'):
-            types.append(self.tenant_profile.type)
+
+        else:
+            if hasattr(self, 'worker_profile'):
+                types.append(self.worker_profile.type)
+            if hasattr(self, 'tenant_profile'):
+                types.append(self.tenant_profile.type)
         return types
 
     @property
