@@ -121,7 +121,7 @@ class UserService(BaseService):
 
         logger.debug('EXTRA FIELDS: %s', extra_fields)
 
-        user = UserData.objects.create_user(
+        user: UserData = UserData.objects.create_user(
             email=email,
             password=password,
             number=number,

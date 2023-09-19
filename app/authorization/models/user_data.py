@@ -126,7 +126,7 @@ class UserData(AbstractUser):
 
     @property
     def all_permissions(self):
-        return list(self.permissions.all())
+        return list(self.profile.permissions.all())
 
     def get_full_name(self) -> str:
         if self.type == ORG:
