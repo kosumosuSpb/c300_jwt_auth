@@ -44,7 +44,6 @@ class UserService(BaseService):
     """Управление пользователем и его профилем"""
     def __init__(self, user_id_or_token: str | int | UserData):
         self.user: UserData = self.get_user(user_id_or_token)
-        self.types: list[str] = self.user.types
 
     @classmethod
     def get_user(cls, user: str | int) -> UserData | None:
@@ -103,7 +102,7 @@ class UserService(BaseService):
 
         Args:
             email: электронная почта
-            password: пароль
+            password (object): пароль
             profile: словарь с профилем для создания профиля пользователя
             number: номер лицевого счёта
             **extra_fields: дополнительные поля пользователя
@@ -111,9 +110,6 @@ class UserService(BaseService):
         Returns:
             Модель пользователя UserData
         """
-        if not number:
-            number = cls._get_number()
-
         logger.debug('UserService | profile: %s', profile)
 
         user_type = profile.get('type')
@@ -204,18 +200,17 @@ class UserService(BaseService):
         """Обновление (изменение) адреса электронной почты"""
         pass
 
-    def add_permissions(self, perms: list | tuple | set, profile: UserProfile):
+    def add_permissions(self, perms: list | tuple | set):
         """
         Добавление списка прав профилю пользователя
 
         Args:
             perms: права CustomPermissions (список, кортеж или множество)
-            profile: профиль UserProfile
         """
         logger.debug('Добавление прав пользователю %s', self.user)
         assert isinstance(perms, (list, tuple, set)), 'perms должен быть списком, кортежем или множеством!'
 
-        if ORG in self.types:
+        if self.user.type == ORG:
             new_perms = perms
         else:
             parent_perms = self.get_parent_perms()
@@ -224,25 +219,19 @@ class UserService(BaseService):
                 logger.warning('Пользователю %s добавлены только те права, которые есть у компании',
                                self.user)
 
-        self.user.worker_profile.permissions.add(*new_perms)
+        self.user.profile.permissions.add(*new_perms)
 
-    def add_permission(self, perm):
+    def add_permission(self, perm: CustomPermissionModel):
         """Добавление одного права пользователю"""
         assert isinstance(perm, CustomPermissionModel), 'perm должен быть объектом CustomPermissionModel!'
         self.add_permissions((perm, ))
 
-    def get_parent_perms(self, profile: UserProfile):
+    def get_parent_perms(self):
         """Получает разрешения родительских профилей"""
-        types = self.user.types
-
-        if ORG in types:
+        if self.user.type == ORG:
             return
 
-        permissions = set()
-
-        for type_ in types:
-            parent_perms = self._get_parent_perms(self.user.pk, type_)
-            permissions.update(parent_perms)
+        permissions = self._get_parent_perms(self.user.pk, self.user.type)
 
         return permissions
 
@@ -257,19 +246,6 @@ class UserService(BaseService):
         parent_perms = profile.department.company.permissions.all()
 
         return parent_perms
-
-    @staticmethod
-    def _get_number() -> str:
-        """Временная реализация метода получения уникального номера для пользователя"""
-        while True:
-            number = random.randint(1000000000000, 9999999999999)
-            number = str(number)
-
-            try:
-                UserData.objects.get(number=number)
-            except ObjectDoesNotExist:
-                break
-        return number
 
     def validate_human_fields(self, profile: dict) -> bool:
         """Проверяет наличие необходимых ключей в словаре профиля"""
@@ -290,13 +266,9 @@ class UserService(BaseService):
     def _delete_user(user: UserData):
         logger.debug('Запущено удаление пользователя %s', user)
 
-        profiles: list[UserProfile] = user.profiles
-
-        for profile in profiles:
-            logger.debug('Удаление профиля %s', profile)
-            profile.delete()
-
+        user.profile.delete()
         user.delete()
+
         logger.debug('Пользователь %s успешно удалён', user)
 
     @classmethod

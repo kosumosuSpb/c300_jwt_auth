@@ -1,10 +1,13 @@
 import logging
+from typing import TYPE_CHECKING
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
 from config.settings import ORG, WORKER, TENANT
+if TYPE_CHECKING:
+    from app.authorization.models import CompanyProfile, HumanBaseProfile
 
 
 logger = logging.getLogger(__name__)
@@ -113,22 +116,9 @@ class UserData(AbstractUser):
     )
 
     @property
-    def type(self) -> list:
+    def type(self) -> str:
         """Возвращает тип пользователя"""
-        types = []
-        if hasattr(self, 'company_profile'):
-            types.append(self.company_profile.type)
-
-        else:
-            if hasattr(self, 'worker_profile'):
-                types.append(self.worker_profile.type)
-            if hasattr(self, 'tenant_profile'):
-                types.append(self.tenant_profile.type)
-        return types
-
-    @property
-    def types(self) -> list:
-        return self.type
+        return self.profile.type
 
     @property
     def full_name(self):
@@ -138,24 +128,28 @@ class UserData(AbstractUser):
     def all_permissions(self):
         return list(self.permissions.all())
 
-    def get_full_name(self):
-        assert len(self.profiles) > 0, 'Пользователь не связан ни с одним профилем (такого не должно быть)!'
-        if WORKER in self.types or TENANT in self.types:
-            return self.profiles[0].first_name + ' ' + self.profiles[0].last_name
-        elif ORG in self.types:
-            return self.profiles[0].name
+    def get_full_name(self) -> str:
+        if self.type == ORG:
+            name = self.company_profile.name
+        else:
+            name = self.profile.first_name + ' ' + self.profile.last_name
+
+        return name
 
     @property
-    def profiles(self) -> list:
-        """Возвращает профили пользователя"""
-        profiles = []
+    def profile(self) -> 'CompanyProfile' or 'HumanBaseProfile':
+        """Возвращает профиль пользователя (объект класса UserProfile)"""
         if hasattr(self, 'company_profile'):
-            profiles.append(self.company_profile)
-        if hasattr(self, 'worker_profile'):
-            profiles.append(self.worker_profile)
-        if hasattr(self, 'tenant_profile'):
-            profiles.append(self.tenant_profile)
-        return profiles
+            profile = self.company_profile
+        elif hasattr(self, 'worker_profile'):
+            profile = self.worker_profile
+        elif hasattr(self, 'tenant_profile'):
+            profile = self.tenant_profile
+        else:
+            msg = 'Не привязан ни один профиль!'
+            logger.error(msg)
+            raise TypeError(msg)
+        return profile
 
     def __str__(self):
         return f'[user:{self.pk}:{self.email}]'
