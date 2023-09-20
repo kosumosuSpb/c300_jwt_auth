@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from rest_framework import serializers
 
 from app.authorization.models import (
@@ -11,7 +12,6 @@ from app.authorization.models import (
 )
 from app.authorization.services.user_service import UserService
 from app.authorization.services.company_service import CompanyService
-from config.settings import ORG, TENANT, WORKER
 
 
 logger = logging.getLogger(__name__)
@@ -46,11 +46,11 @@ class UserRegistrationSerializer(serializers.Serializer):
         logger.debug('validate_profile | Profile data: %s', profile)
 
         user_type = profile.get('type')
-        if user_type == ORG:
+        if user_type == settings.ORG:
             profile_serializer = CompanyProfileSerializer(data=profile)
-        elif user_type == WORKER:
+        elif user_type == settings.WORKER:
             profile_serializer = WorkerProfileSerializer(data=profile)
-        elif user_type == TENANT:
+        elif user_type == settings.TENANT:
             profile_serializer = TenantProfileSerializer(data=profile)
         else:
             msg = 'Передан не верный тип профиля пользователя (в "profiles")!'

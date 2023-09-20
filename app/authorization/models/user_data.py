@@ -1,11 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
-from config.settings import ORG, WORKER, TENANT
 if TYPE_CHECKING:
     from app.authorization.models import CompanyProfile, HumanBaseProfile
 
@@ -129,7 +129,7 @@ class UserData(AbstractUser):
         return list(self.profile.permissions.all())
 
     def get_full_name(self) -> str:
-        if self.type == ORG:
+        if self.type == settings.ORG:
             name = self.company_profile.name
         else:
             name = self.profile.first_name + ' ' + self.profile.last_name

@@ -81,10 +81,10 @@ LOGGING = {
             'propagate': False,
             'level': 'INFO',
         },
-        'django.db.backends': {
-            'handlers': ['console_short'],
-            'propagate': False,
-            'level': 'DEBUG',
-        },
+        # 'django.db.backends': {
+        #     'handlers': ['console_short'],
+        #     'propagate': False,
+        #     'level': 'DEBUG',
+        # },
     },
 }

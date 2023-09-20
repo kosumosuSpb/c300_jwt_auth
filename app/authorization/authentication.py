@@ -5,7 +5,7 @@ from rest_framework import exceptions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authentication import CSRFCheck
 
-from config.settings import SIMPLE_JWT
+from django.conf import settings
 
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,8 @@ class CookiesJWTAuthentication(JWTAuthentication):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user_model = get_user_model()
-        self.access_token_name = SIMPLE_JWT.get('AUTH_COOKIE')
-        self.refresh_token_name = SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
+        self.access_token_name = settings.SIMPLE_JWT.get('AUTH_COOKIE')
+        self.refresh_token_name = settings.SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
     def authenticate(self, request):
         logger.debug('CookiesJWTAuthentication | authenticate')

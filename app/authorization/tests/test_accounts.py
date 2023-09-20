@@ -1,20 +1,24 @@
+import datetime as dt
+import os
 import sys
 import logging
 
 import requests
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.query import QuerySet
-from django.test import Client, tag
+from django.test import Client, tag, override_settings
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from unittest.mock import patch
 
 from app.authorization.models import *
 from app.authorization.services.secure import make_activation_code
 from app.authorization.services.company_service import CompanyService
 from app.authorization.services.user_service import UserService
-from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 from app.authorization.tests.base_testcase import BaseTestCase
+from app.authorization.tasks import delete_expired_tokens_from_db, send_activation_mail
 
 
 logger = logging.getLogger(__name__)
@@ -95,6 +99,7 @@ class TestAccount(BaseTestCase):
 
         self.assertEqual(401, response.status_code)
 
+    @override_settings(ACTIVATION=False)
     def test_create_company(self):
         logger.debug('test_create_company')
         user_company = self._create_company()
@@ -102,12 +107,14 @@ class TestAccount(BaseTestCase):
         self.assertTrue(hasattr(user_company, 'company_profile'))
         self.assertIsInstance(user_company.company_profile, CompanyProfile)
 
+    @override_settings(ACTIVATION=False)
     def test_create_department(self):
         user_company = self._create_company()
         profile: CompanyProfile = user_company.company_profile
         department = self._create_department(profile)
         self.assertIsInstance(department, Department)
 
+    @override_settings(ACTIVATION=False)
     def test_create_worker_male(self):
         logger.debug('test_create_worker')
         user_worker = self._create_worker()
@@ -115,6 +122,7 @@ class TestAccount(BaseTestCase):
         self.assertTrue(hasattr(user_worker, 'worker_profile'))
         self.assertIsInstance(user_worker.worker_profile, WorkerProfile)
 
+    @override_settings(ACTIVATION=False)
     def test_create_worker_female(self):
         logger.debug('test_create_worker')
         user_worker = self._create_worker(sex='female')
@@ -122,12 +130,14 @@ class TestAccount(BaseTestCase):
         self.assertTrue(hasattr(user_worker, 'worker_profile'))
         self.assertIsInstance(user_worker.worker_profile, WorkerProfile)
 
+    @override_settings(ACTIVATION=False)
     def test_link_worker_to_department(self):
         user_worker = self._create_worker()
         user_company = self._create_company()
         dep = self._create_department(user_company.company_profile)
         CompanyService.link_worker_to_department(user_worker.worker_profile, dep)
 
+    @override_settings(ACTIVATION=False)
     def test_create_tenant(self):
         logger.debug('test_create_tenant')
         user_tenant = self._create_tenant()
@@ -135,6 +145,7 @@ class TestAccount(BaseTestCase):
         self.assertTrue(hasattr(user_tenant, 'tenant_profile'))
         self.assertIsInstance(user_tenant.tenant_profile, TenantProfile)
 
+    @override_settings(ACTIVATION=False)
     def test_create_already_created_user(self):
         logger.debug('test_register_already_registered_user')
         self._create_worker()
@@ -146,7 +157,7 @@ class TestAccount(BaseTestCase):
         with self.assertRaises(ValidationError):
             user_tenant = self._create_tenant(email='aerg')
 
-    def test_activation(self):
+    def test_activation_service(self):
         """Тест активации"""
         user: UserData = UserData.objects.get(email=self.email)
         activation_code = make_activation_code()
@@ -176,7 +187,7 @@ class TestAccount(BaseTestCase):
         self.assertTrue(bool(new_access_token))
         self.assertNotEqual(access_token, new_access_token)
 
-        if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
+        if settings.SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
             logger.debug('ROTATE_REFRESH_TOKENS is True, check refresh token')
             new_refresh_token = response.cookies.get(self.refresh_token_name)
             self.assertTrue(bool(new_refresh_token))
@@ -190,6 +201,26 @@ class TestAccount(BaseTestCase):
         self.assertIsNotNone(csrf_token_cookies)
 
     # BLACKLIST TESTS
+
+    def test_task_delete_expired_tokens(self):
+        """Тест на удаление просроченных токенов"""
+        response = self._login()
+        tokens = self._get_tokens_from_response_cookies(response)
+        refresh_token = tokens.get(self.refresh_token_name)
+
+        outstanding_token = OutstandingToken.objects.get(token=refresh_token)
+        self.assertTrue(bool(outstanding_token))
+        logger.debug('OUTSTANDING_TOKEN: %s', outstanding_token)
+
+        now = dt.datetime.now()
+        outstanding_token.expires_at = now
+        outstanding_token.save()
+
+        delete_expired_tokens_from_db.run()  # celery task
+
+        with self.assertRaises(ObjectDoesNotExist):
+            outstanding_token = OutstandingToken.objects.get(token=refresh_token)
+            # logger.debug('OUTSTANDING_TOKEN after delete: %s', outstanding_token)
 
     @tag('blacklist')
     def test_add_refresh_to_outstanding_db(self):

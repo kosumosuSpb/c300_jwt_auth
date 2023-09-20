@@ -4,6 +4,7 @@ Login, Logout, TokenRefresh
 import logging
 
 import jwt
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -21,14 +22,13 @@ from app.authorization.services.secure import (
     set_csrf,
     del_auth_cookies,
 )
-from config.settings import SIMPLE_JWT
 
 
 logger = logging.getLogger(__name__)
 
 
-ACCESS_TOKEN = SIMPLE_JWT.get('AUTH_COOKIE')
-REFRESH_TOKEN = SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
+ACCESS_TOKEN = settings.SIMPLE_JWT.get('AUTH_COOKIE')
+REFRESH_TOKEN = settings.SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
 
 class LoginView(TokenObtainPairView):
@@ -92,7 +92,7 @@ class TokenRefreshCookieView(TokenRefreshView):
         logger.debug('Refresh | Ответ от simplejwt: Response.data: %s', response.data)
         new_access_token = response.data.pop('access', None)
 
-        if SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
+        if settings.SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS'):
             new_refresh_token = response.data.pop('refresh', None)
             if new_refresh_token:
                 response = set_refresh_to_cookie(response, new_refresh_token)

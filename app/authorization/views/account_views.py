@@ -9,6 +9,7 @@
 
 import logging
 
+from django.conf import settings
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -25,7 +26,6 @@ from app.authorization.services.user_service import (
 from app.authorization.permissions import IsSuperuser
 from app.authorization.tasks import send_activation_mail
 from app.authorization.services.secure import make_activation_code
-from config.settings import ACTIVATION
 
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ class RegisterView(APIView):
         user.set_password(password)
         user.save()
 
-        if ACTIVATION:
+        if settings.ACTIVATION:
             logger.debug('Включена активация, генерируем код и отправляем по почте...')
             user.is_active = False
             user.activation_code = make_activation_code()
@@ -139,13 +139,13 @@ class ActivateAccountView(APIView):
             user_service = UserService(user_id)
             user_service.activate_user(activation_code)
         except TypeError as te:
-            return Response(data={'status': 'FAIL', 'detail': str(te)},
+            return Response(data={'status': 'ERROR', 'detail': str(te)},
                             status=status.HTTP_400_BAD_REQUEST)
         except KeyError as le:
-            return Response(data={'status': 'FAIL', 'detail': str(le)},
+            return Response(data={'status': 'ERROR', 'detail': str(le)},
                             status=status.HTTP_404_NOT_FOUND)
         except ValueError as ve:
-            return Response(data={'status': 'FAIL', 'detail': str(ve)},
+            return Response(data={'status': 'ERROR', 'detail': str(ve)},
                             status=status.HTTP_404_NOT_FOUND)
         except ActivationError as ae:
             return Response(data={'status': 'ERROR', 'detail': str(ae)},

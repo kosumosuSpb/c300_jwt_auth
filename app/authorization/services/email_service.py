@@ -1,10 +1,10 @@
 import logging
 
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
 from app.authorization.services.base_service import BaseService
 from app.authorization.services.secure import make_activation_code
-from config.settings import DEFAULT_FROM_EMAIL
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class EmailService(BaseService):
     """Сервис для работы с почтой"""
 
     @staticmethod
-    def send(to: str, subject: str, message: str, from_email=DEFAULT_FROM_EMAIL):
+    def send(to: str, subject: str, message: str, from_email=settings.DEFAULT_FROM_EMAIL):
         """Отправка почты"""
         msg = EmailMultiAlternatives(
             subject,
@@ -30,7 +30,7 @@ class EmailService(BaseService):
             user_id: str | int,
             to: str,
             code: str,
-            from_email=DEFAULT_FROM_EMAIL
+            from_email=settings.DEFAULT_FROM_EMAIL
     ):
         """Отправка письма активации с использованием шаблона"""
         logger.debug('send_activation_email')

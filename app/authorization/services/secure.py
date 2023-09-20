@@ -1,11 +1,10 @@
 import logging
 import secrets
 
+from django.conf import settings
 from django.middleware import csrf
 from rest_framework.response import Response
 from rest_framework.request import Request
-
-from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME
 
 
 logger = logging.getLogger(__name__)
@@ -18,12 +17,12 @@ def set_access_to_cookie(response: Response, access_token: str) -> Response:
         logger.warning('Токен доступа равен None! Скорее всего что-то пошло не так')
 
     access_cookie = {
-        'key': SIMPLE_JWT['AUTH_COOKIE'],
+        'key': settings.SIMPLE_JWT['AUTH_COOKIE'],
         'value': access_token,
-        'expires': SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
-        'secure': SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-        'httponly': SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-        'samesite': SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
+        'expires': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
+        'secure': settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+        'httponly': settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        'samesite': settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
     }
     response.set_cookie(**access_cookie)
     return response
@@ -36,12 +35,12 @@ def set_refresh_to_cookie(response: Response, refresh_token: str) -> Response:
         logger.warning('Токен обновления равен None! Скорее всего что-то пошло не так')
 
     refresh_cookie = {
-        'key': SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+        'key': settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
         'value': refresh_token,
-        'expires': SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'],
-        'secure': SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-        'httponly': SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-        'samesite': SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
+        'expires': settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'],
+        'secure': settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+        'httponly': settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        'samesite': settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
     }
     response.set_cookie(**refresh_cookie)
     return response
@@ -54,7 +53,7 @@ def set_csrf(response: Response, request: Request) -> Response:
     csrf_token = csrf.get_token(request)
 
     csrf_cookie = {
-        'key': CSRF_COOKIE_NAME,
+        'key': settings.CSRF_COOKIE_NAME,
         'value': csrf_token,
         'secure': False,
         'httponly': False,
@@ -69,19 +68,19 @@ def set_csrf(response: Response, request: Request) -> Response:
 def del_auth_cookies(response: Response, delete_csrf=True) -> Response:
     logger.debug('delete_auth_cookies')
     response.delete_cookie(
-        SIMPLE_JWT['AUTH_COOKIE'],
-        domain=SIMPLE_JWT['AUTH_COOKIE_DOMAIN'],
-        path=SIMPLE_JWT['AUTH_COOKIE_PATH']
+        settings.SIMPLE_JWT['AUTH_COOKIE'],
+        domain=settings.SIMPLE_JWT['AUTH_COOKIE_DOMAIN'],
+        path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH']
     )
     response.delete_cookie(
-        SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
-        domain=SIMPLE_JWT['AUTH_COOKIE_DOMAIN'],
-        path=SIMPLE_JWT['AUTH_COOKIE_PATH']
+        settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+        domain=settings.SIMPLE_JWT['AUTH_COOKIE_DOMAIN'],
+        path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH']
     )
 
     if delete_csrf:
         response.delete_cookie(
-            CSRF_COOKIE_NAME,
+            settings.CSRF_COOKIE_NAME,
             domain=None,
             path='/'
         )
@@ -95,5 +94,5 @@ def make_activation_code(length: int | None = None) -> str:
     """Создание кода активации"""
     length = length or 20
     code = secrets.token_hex(length // 2)
-    logger.debug('Сгенерирован код активации: %s', code)
+    logger.debug('Сгенерирован код активации: %s', bool(code))
     return code

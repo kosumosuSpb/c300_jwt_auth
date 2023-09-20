@@ -10,7 +10,7 @@ from kafka import KafkaProducer
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from config.settings import KAFKA_URL
+from django.conf import settings
 from app.authorization.services.user_service import UserService
 
 
@@ -24,7 +24,7 @@ AUTH_RESPONSE = 'auth_response'
 class KafkaSender:
     """Простой класс для отправки сообщений в кафку"""
     def __init__(self, kafka_servers: list[str] | None = None):
-        self.servers = self._repair_servers(kafka_servers)
+        self.servers = self._cut_url_string(kafka_servers)
         self.producer = self._get_producer()
 
     def _get_producer(self):
@@ -34,7 +34,7 @@ class KafkaSender:
         )
 
     @staticmethod
-    def _repair_servers(servers: list[str]):
+    def _cut_url_string(servers: list[str]):
         """Убирает kafka:// перед серверами"""
         new_servers = list(map(lambda server: server.replace('kafka://', ''), servers))
         return new_servers
@@ -44,11 +44,11 @@ class KafkaSender:
         self.producer.send(topic, value=message)
 
 
-sender = KafkaSender([KAFKA_URL, ])
+sender = KafkaSender([settings.KAFKA_URL, ])
 
 app = faust.App(
     'auth_bus',
-    broker=KAFKA_URL,
+    broker=settings.KAFKA_URL,
     # store='rocksdb://'
     autodiscovery=True,
 )

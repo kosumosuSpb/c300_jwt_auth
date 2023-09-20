@@ -1,14 +1,13 @@
+from django.conf import settings
 from django.db import models
-
-from config.settings import ORG, WORKER, TENANT
 
 
 class UserProfile(models.Model):
     """Абстрактная модель профиля пользователя"""
     TYPE_CHOICES = (
-        (WORKER, 'Worker'),
-        (TENANT, 'Tenant'),
-        (ORG, 'Company'),
+        (settings.WORKER, 'Worker'),
+        (settings.TENANT, 'Tenant'),
+        (settings.ORG, 'Company'),
     )
 
     class Meta:

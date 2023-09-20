@@ -4,6 +4,7 @@ import datetime
 from http.cookies import Morsel
 
 import requests
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.query import QuerySet
 from django.test import Client, tag
@@ -15,7 +16,6 @@ from app.authorization.models.user_data import UserData
 from app.authorization.models.company_profile import CompanyProfile, Department
 from app.authorization.services.user_service import UserService
 from app.authorization.services.company_service import CompanyService
-from config.settings import SIMPLE_JWT, CSRF_COOKIE_NAME, CSRF_HEADERS_NAME
 
 
 logger = logging.getLogger(__name__)
@@ -89,10 +89,10 @@ class BaseTestCase(APITestCase):
         }
 
         # TOKEN VARIABLES
-        cls.access_token_name = SIMPLE_JWT['AUTH_COOKIE']
-        cls.refresh_token_name = SIMPLE_JWT['AUTH_COOKIE_REFRESH']
-        cls.csrf_token_name = CSRF_COOKIE_NAME
-        cls.csrf_headers_name = CSRF_HEADERS_NAME
+        cls.access_token_name = settings.SIMPLE_JWT['AUTH_COOKIE']
+        cls.refresh_token_name = settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH']
+        cls.csrf_token_name = settings.CSRF_COOKIE_NAME
+        cls.csrf_headers_name = settings.CSRF_HEADERS_NAME
 
     def setUp(self) -> None:
         logger.debug('setUp | Создание объекта UserData')

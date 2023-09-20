@@ -3,6 +3,7 @@ import random
 import datetime
 
 import jwt
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet, Prefetch
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
@@ -18,14 +19,6 @@ from app.authorization.models import (
     WorkerProfile,
     UserProfile,
     CustomPermissionModel
-)
-
-from config.settings import (
-    SIMPLE_JWT,
-    ORG,
-    TENANT,
-    WORKER,
-    ACTIVATION
 )
 
 
@@ -151,11 +144,11 @@ class UserService(BaseService):
 
         """
         user_type = profile.get('type')
-        if user_type == ORG:
+        if user_type == settings.ORG:
             profile = cls.create_profile_company(user, profile)
-        elif user_type == TENANT:
+        elif user_type == settings.TENANT:
             profile = cls.create_profile_tenant(user, profile)
-        elif user_type == WORKER:
+        elif user_type == settings.WORKER:
             profile = cls.create_profile_worker(user, profile)
         else:
             msg = 'Указан не верный тип профиля пользователя!'
@@ -210,7 +203,7 @@ class UserService(BaseService):
         logger.debug('Добавление прав пользователю %s', self.user)
         assert isinstance(perms, (list, tuple, set)), 'perms должен быть списком, кортежем или множеством!'
 
-        if self.user.type == ORG:
+        if self.user.type == settings.ORG:
             new_perms = perms
         else:
             parent_perms = self.get_parent_perms()
@@ -228,7 +221,7 @@ class UserService(BaseService):
 
     def get_parent_perms(self):
         """Получает разрешения родительских профилей"""
-        if self.user.type == ORG:
+        if self.user.type == settings.ORG:
             return
 
         permissions = self._get_parent_perms(self.user.pk, self.user.type)
@@ -239,7 +232,7 @@ class UserService(BaseService):
     def _get_parent_perms(user_id: int | str, user_type: str) -> QuerySet:
         """Получает разрешения родительского профиля, в зависимости от типа профиля"""
         assert isinstance(user_id, (str, int)), 'user_id должен быть str или int!'
-        assert user_type in (WORKER, TENANT, ORG), 'Не верный user_type!'
+        assert user_type in (settings.WORKER, settings.TENANT, settings.ORG), 'Не верный user_type!'
 
         user = UserData.objects.select_related(f'{user_type}__department__company').get(pk=user_id)
         profile = getattr(user, user_type)
@@ -294,8 +287,8 @@ class UserService(BaseService):
     @classmethod
     def get_user_id_from_token(cls, token: str) -> int | None:
         """Вернуть user_id из токена"""
-        algorythm = SIMPLE_JWT.get('ALGORITHM')
-        secret_key = SIMPLE_JWT.get('SIGNING_KEY')
+        algorythm = settings.SIMPLE_JWT.get('ALGORITHM')
+        secret_key = settings.SIMPLE_JWT.get('SIGNING_KEY')
 
         logger.info('Token type: %s, Token: %s', type(token), token)
 
