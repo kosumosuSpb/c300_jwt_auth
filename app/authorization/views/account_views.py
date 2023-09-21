@@ -86,7 +86,7 @@ class UserDeleteView(APIView):
 
 class PasswordChangeView(APIView):
     def post(self, request: Request, *args, **kwargs):
-        pass
+        logger.debug('PasswordChangeView | POST')
 
 
 class ManualActivateAccountView(APIView):

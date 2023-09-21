@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 
 services:
   zookeeper:
@@ -54,7 +54,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sh -c "/wait && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    image: auth_service
+    command: sh -c "/wait && python manage.py migrate && gunicorn --env DJANGO_SETTINGS_MODULE=config.settings config.wsgi -b 0.0.0.0:8000 --reload
     volumes:
       - .:/app
     ports:
@@ -65,20 +66,23 @@ services:
       - redis
 
   celery:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: auth_service
     command: celery -A config.celery_app worker --loglevel=info
+    env_file:
+      - .env
     volumes:
       - .:/app
     depends_on:
       - redis
       - auth_service
 
-#  celery-beat:
-#    image: django:latest
-#    command: celery -A your_project_name beat --loglevel=info
-#    volumes:
-#      - .:/app
-#    depends_on:
-#      - redis
+  celery-beat:
+    image: auth_service
+    command: celery -A config.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - auth_service
