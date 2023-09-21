@@ -2,12 +2,14 @@
 **/.venv
 **/.wenv
 **/.env
+
 /c300_requirements
 /.db_temp
 /temp/
 
 **/*.sqlite*
 /*-data/
+/celerybeat-schedule.db
 
 !/.gitkeep
 **/*.log*
