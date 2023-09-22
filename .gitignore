@@ -1,7 +1,7 @@
 /.idea
 **/.venv
 **/.wenv
-**/.env
+**/.env*
 
 /c300_requirements
 /.db_temp

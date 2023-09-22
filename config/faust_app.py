@@ -2,16 +2,14 @@ import logging
 import os
 import json
 
-import django
 import faust
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from kafka import KafkaProducer
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
-
-from django.conf import settings
 from app.authorization.services.user_service import UserService
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 
 logger = logging.getLogger(__name__)
