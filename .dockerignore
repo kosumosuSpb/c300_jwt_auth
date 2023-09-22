@@ -1,0 +1,9 @@
+/auth_bus-data/
+/c300_requirements/
+/celerybeat-schedule.db
+**/temp/
+*/*.log*
+/.venv/
+/.db_temp/
+/*.sqlite*
+/.env_debug
