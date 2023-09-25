@@ -9,7 +9,8 @@
 
 **/*.sqlite*
 /*-data/
-/celerybeat-schedule.db
+/celery/
+**/celerybeat-schedule*
 /apps/authorization/fixtures/
 
 !/.gitkeep

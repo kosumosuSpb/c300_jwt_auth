@@ -1,10 +1,10 @@
 /auth_bus-data/
 /c300_requirements/
-/celerybeat-schedule.db
+**/celerybeat-schedule*
 **/temp/
 */*.log*
 /.venv/
 /.db_temp/
 /*.sqlite*
-/.env_debug
+/.dev.env
 /apps/authorization/fixtures/
