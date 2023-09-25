@@ -1,8 +1,8 @@
 from django.db import models
 
-from app.authorization.models.user_data import UserData
-from app.authorization.models.base_profiles import HumanBaseProfile
-from app.authorization.models.company_profile import Department
+from apps.authorization.models.user_data import UserData
+from apps.authorization.models.base_profiles import HumanBaseProfile
+from apps.authorization.models.company_profile import Department
 
 
 class WorkerProfile(HumanBaseProfile):

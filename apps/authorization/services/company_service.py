@@ -1,7 +1,7 @@
 import logging
 
-from app.authorization.services.base_service import BaseService
-from app.authorization.models import (
+from apps.authorization.services.base_service import BaseService
+from apps.authorization.models import (
     CompanyProfile,
     Department,
     UserData,

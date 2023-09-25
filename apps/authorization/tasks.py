@@ -6,7 +6,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.utils import aware_utcnow
 
 from config.celery_app import app
-from app.authorization.services.email_service import EmailService
+from apps.authorization.services.email_service import EmailService
 
 
 logger = logging.getLogger(__name__)

@@ -10,8 +10,8 @@ from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
-from app.authorization.services.base_service import BaseService
-from app.authorization.models import (
+from apps.authorization.services.base_service import BaseService
+from apps.authorization.models import (
     UserData,
     CompanyProfile,
     Department,

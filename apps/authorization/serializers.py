@@ -3,15 +3,15 @@ import logging
 from django.conf import settings
 from rest_framework import serializers
 
-from app.authorization.models import (
+from apps.authorization.models import (
     UserData,
     CompanyProfile,
     WorkerProfile,
     TenantProfile,
     Department,
 )
-from app.authorization.services.user_service import UserService
-from app.authorization.services.company_service import CompanyService
+from apps.authorization.services.user_service import UserService
+from apps.authorization.services.company_service import CompanyService
 
 
 logger = logging.getLogger(__name__)

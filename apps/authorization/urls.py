@@ -1,16 +1,16 @@
 from django.urls import path
 
-from app.authorization.views.account_views import (
+from apps.authorization.views.account_views import (
     RegisterView,
     ActivateAccountView,
     TestView,
 )
-from app.authorization.views.auth_views import (
+from apps.authorization.views.auth_views import (
     LoginView,
     TokenRefreshCookieView,
     LogoutView,
 )
-from app.authorization.views.company_views import DepartmentCreateView
+from apps.authorization.views.company_views import DepartmentCreateView
 
 
 urlpatterns = [

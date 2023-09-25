@@ -4,10 +4,10 @@ from django.test import Client, tag, override_settings
 from rest_framework.response import Response
 from unittest.mock import patch
 
-from app.authorization.models import UserData
-from app.authorization.tests.base_testcase import BaseTestCase
-from app.authorization.services.secure import make_activation_code
-from app.authorization.tasks import send_activation_mail
+from apps.authorization.models import UserData
+from apps.authorization.tests.base_testcase import BaseTestCase
+from apps.authorization.services.secure import make_activation_code
+from apps.authorization.tasks import send_activation_mail
 
 
 logger = logging.getLogger(__name__)

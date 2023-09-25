@@ -19,11 +19,11 @@ from django.urls import path
 from django.conf.urls import include
 from rest_framework.routers import DefaultRouter
 
-# from app.authorization.urls import router
+# from apps.authorization.urls import router
 
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
     # path('api/v1/', include(router.urls)),
-    path('api/v1/', include('app.authorization.urls')),
+    path('api/v1/', include('apps.authorization.urls')),
 ]

@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
 if TYPE_CHECKING:
-    from app.authorization.models import CompanyProfile, HumanBaseProfile
+    from apps.authorization.models import CompanyProfile, HumanBaseProfile
 
 
 logger = logging.getLogger(__name__)

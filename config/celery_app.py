@@ -16,7 +16,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.beat_schedule = {
     # Executes every day 3:00 a.m.
     'every_day_delete_expired_tokens_from_db': {
-        'task': 'app.authorization.tasks.delete_expired_tokens_from_db',
+        'task': 'apps.authorization.tasks.delete_expired_tokens_from_db',
         'schedule': crontab(hour=3, minute=0),
         # 'args': (),
     },

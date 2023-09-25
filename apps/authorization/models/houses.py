@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-from app.authorization.models.company_profile import CompanyProfile
+from apps.authorization.models.company_profile import CompanyProfile
 
 
 class HouseGroup(models.Model):

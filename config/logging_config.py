@@ -39,7 +39,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'DEBUG',
             'formatter': 'detailed',
-            "filename": "config/log/debug.log",
+            "filename": "logs/debug.log",
             'maxBytes': 102400,
             'backupCount': 5,
             # 'filters': ['lowererror'],
@@ -48,7 +48,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'ERROR',
             'formatter': 'detailed',
-            "filename": "config/log/error.log",
+            "filename": "logs/error.log",
             'maxBytes': 102400,
             'backupCount': 5,
             # 'filters': ['lowererror'],
@@ -71,7 +71,7 @@ LOGGING = {
             # 'propagate': False,
             'level': 'INFO',
         },
-        'app.authorization': {
+        'apps.authorization': {
             'handlers': ['console'],
             'propagate': False,
             'level': 'DEBUG',

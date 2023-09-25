@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-from app.authorization.models.houses import House
+from apps.authorization.models.houses import House
 
 
 class Area(models.Model):

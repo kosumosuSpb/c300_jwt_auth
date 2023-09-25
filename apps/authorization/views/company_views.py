@@ -5,8 +5,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app.authorization.serializers import DepartmentSerializer
-from app.authorization.services.company_service import CompanyService
+from apps.authorization.serializers import DepartmentSerializer
+from apps.authorization.services.company_service import CompanyService
 
 
 logger = logging.getLogger(__name__)

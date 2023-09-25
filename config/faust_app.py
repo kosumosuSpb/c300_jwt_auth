@@ -7,7 +7,7 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from kafka import KafkaProducer
 
-from app.authorization.services.user_service import UserService
+from apps.authorization.services.user_service import UserService
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 

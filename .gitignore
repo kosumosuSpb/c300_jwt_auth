@@ -10,6 +10,7 @@
 **/*.sqlite*
 /*-data/
 /celerybeat-schedule.db
+/apps/authorization/fixtures/
 
 !/.gitkeep
 **/*.log*

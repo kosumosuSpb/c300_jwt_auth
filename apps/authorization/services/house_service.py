@@ -1,10 +1,10 @@
 import logging
 
-from app.authorization.models.houses import HouseGroup, House
-from app.authorization.models.area import Area
-from app.authorization.models.company_profile import CompanyProfile
-from app.authorization.models.tenant_profile import TenantProfile
-from app.authorization.models.owner_area import OwnerArea
+from apps.authorization.models.houses import HouseGroup, House
+from apps.authorization.models.area import Area
+from apps.authorization.models.company_profile import CompanyProfile
+from apps.authorization.models.tenant_profile import TenantProfile
+from apps.authorization.models.owner_area import OwnerArea
 
 
 logger = logging.getLogger(__name__)

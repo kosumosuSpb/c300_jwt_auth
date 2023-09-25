@@ -13,12 +13,12 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from unittest.mock import patch
 
-from app.authorization.models import *
-from app.authorization.services.secure import make_activation_code
-from app.authorization.services.company_service import CompanyService
-from app.authorization.services.user_service import UserService
-from app.authorization.tests.base_testcase import BaseTestCase
-from app.authorization.tasks import delete_expired_tokens_from_db, send_activation_mail
+from apps.authorization.models import *
+from apps.authorization.services.secure import make_activation_code
+from apps.authorization.services.company_service import CompanyService
+from apps.authorization.services.user_service import UserService
+from apps.authorization.tests.base_testcase import BaseTestCase
+from apps.authorization.tasks import delete_expired_tokens_from_db, send_activation_mail
 
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,7 @@ import logging
 
 from django.db import models
 
-from app.authorization.models import (
+from apps.authorization.models import (
     CompanyProfile,
     WorkerProfile,
     TenantProfile

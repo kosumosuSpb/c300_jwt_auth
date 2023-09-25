@@ -16,16 +16,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 
-from app.authorization.models.user_data import UserData
-from app.authorization.serializers import UserRegistrationSerializer
-from app.authorization.services.user_service import (
+from apps.authorization.models.user_data import UserData
+from apps.authorization.serializers import UserRegistrationSerializer
+from apps.authorization.services.user_service import (
     UserService,
     UserServiceException,
     ActivationError
 )
-from app.authorization.permissions import IsSuperuser
-from app.authorization.tasks import send_activation_mail
-from app.authorization.services.secure import make_activation_code
+from apps.authorization.permissions import IsSuperuser
+from apps.authorization.tasks import send_activation_mail
+from apps.authorization.services.secure import make_activation_code
 
 
 logger = logging.getLogger(__name__)

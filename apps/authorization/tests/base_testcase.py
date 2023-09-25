@@ -12,10 +12,10 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from app.authorization.models.user_data import UserData
-from app.authorization.models.company_profile import CompanyProfile, Department
-from app.authorization.services.user_service import UserService
-from app.authorization.services.company_service import CompanyService
+from apps.authorization.models.user_data import UserData
+from apps.authorization.models.company_profile import CompanyProfile, Department
+from apps.authorization.services.user_service import UserService
+from apps.authorization.services.company_service import CompanyService
 
 
 logger = logging.getLogger(__name__)

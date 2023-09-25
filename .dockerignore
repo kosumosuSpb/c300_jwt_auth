@@ -7,3 +7,4 @@
 /.db_temp/
 /*.sqlite*
 /.env_debug
+/apps/authorization/fixtures/

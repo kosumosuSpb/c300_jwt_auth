@@ -56,9 +56,10 @@ services:
       dockerfile: Dockerfile
     image: auth_service
 #    command: sh -c "/wait && python manage.py migrate && gunicorn --env DJANGO_SETTINGS_MODULE=config.settings config.wsgi -b :8000 --reload"
-    command: sh -c "/wait && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-#    volumes:
-#      - .:/app
+#    command: sh -c "/wait && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
 #      - ./logs:/app/logs
     ports:
       - "8000:8000"
@@ -72,8 +73,8 @@ services:
     command: celery -A config.celery_app worker --loglevel=info
     env_file:
       - .env
-#    volumes:
-#      - .:/app
+    volumes:
+      - .:/app
     depends_on:
       - redis
       - auth_service
@@ -83,8 +84,8 @@ services:
     command: celery -A config.celery_app beat --loglevel=info
     env_file:
       - .env
-    volumes:
-      - .:/app
+#    volumes:
+#      - .:/app
     depends_on:
       - redis
       - auth_service

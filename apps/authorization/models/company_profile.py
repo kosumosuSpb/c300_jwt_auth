@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-from app.authorization.models.user_data import UserData
-from app.authorization.models.base_profiles import UserProfile
+from apps.authorization.models.user_data import UserData
+from apps.authorization.models.base_profiles import UserProfile
 
 
 class CompanyProfile(UserProfile):
