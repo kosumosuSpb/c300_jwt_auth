@@ -6,5 +6,4 @@
 /.venv/
 /.db_temp/
 /*.sqlite*
-/.dev.env
 /apps/authorization/fixtures/

@@ -2,14 +2,18 @@ import logging
 import os
 import json
 
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
+
 import faust
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from kafka import KafkaProducer
+from kafka.errors import NoBrokersAvailable
+from rest_framework.exceptions import ValidationError
 
 from apps.authorization.services.user_service import UserService
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 
 logger = logging.getLogger(__name__)
@@ -26,10 +30,17 @@ class KafkaSender:
         self.producer = self._get_producer()
 
     def _get_producer(self):
-        return KafkaProducer(
-            bootstrap_servers=self.servers,
-            value_serializer=lambda x: json.dumps(x).encode('utf-8')
-        )
+        try:
+            kafka_producer = KafkaProducer(
+                bootstrap_servers=self.servers,
+                value_serializer=lambda x: json.dumps(x).encode('utf-8')
+            )
+        except NoBrokersAvailable as e:
+            logger.error('Kafka Broker Error: %s', e)
+            logger.error('Servers in args: %s', self.servers)
+            logger.error('settings.KAFKA_URL: %s', settings.KAFKA_URL)
+            raise
+        return kafka_producer
 
     @staticmethod
     def _cut_url_string(servers: list[str]):
@@ -80,16 +91,19 @@ async def auth_requests_agent(stream):
     logger.info('auth_requests_agent started')
     async for value in stream:
         assert isinstance(value, AuthRequest), 'Не верный тип: должен быть AuthRequest'
-        logger.info('Value in faust stream: %s', value)
-        logger.info('Value as dict: %s', value.asdict())
+        logger.info('auth_requests_agent | Value in faust stream: %s', value)
+        logger.info('auth_requests_agent | Value as dict: %s', value.asdict())
 
         if not value.token:
-            logger.info('Нет токена в ивенте')
+            logger.info('auth_requests_agent | Нет токена в ивенте')
             return
 
         value_dict = value.asdict()
-        is_valid = UserService.verify_token(value_dict)
-        logger.info('Валиден ли токен? -> %s', is_valid)
+
+        async_verify_token = sync_to_async(UserService.verify_token, thread_sensitive=True)
+        is_valid = await async_verify_token(value_dict)
+
+        logger.info('auth_requests_agent | Валиден ли токен? -> %s', is_valid)
 
         if not is_valid:
             msg = {
@@ -97,7 +111,7 @@ async def auth_requests_agent(stream):
                 'user_id': '',
                 'permissions': '',
             }
-            logger.error('Токен не валиден!')
+            logger.error('auth_requests_agent | Токен не валиден!')
             sender.send(msg, AUTH_RESPONSE)
             return
 
@@ -116,6 +130,7 @@ async def auth_requests_agent(stream):
             'permissions': permissions,
         }
 
+        logger.info('auth_requests_agent | Отправка ответа: %s', msg)
         sender.send(msg, AUTH_RESPONSE)
 
 
@@ -124,4 +139,5 @@ async def auth_response_agent(stream):
     """Принимает стрим из фауст+кафка из топика response_topic"""
     logger.info('auth_response_agent started')
     async for value in stream:
-        logger.info('auth_response_agent: Value in faust stream: %s', value)
+        logger.info('auth_response_agent | Value in faust stream: %s', value)
+        logger.info('auth_response_agent | Value as dict: %s', value.asdict())

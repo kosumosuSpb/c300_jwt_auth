@@ -58,14 +58,16 @@ services:
       dockerfile: Dockerfile
     image: auth_service
 #    command: sh -c "python manage.py makemigrations && python manage.py migrate && gunicorn --env DJANGO_SETTINGS_MODULE=config.settings config.wsgi -b :8000 --reload"
-    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "/wait && python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
 #      - ./logs:/app/logs
     ports:
       - "8000:8000"
     env_file:
-      - .dev.env
+      - .env
+    environment:
+      WAIT_HOSTS: postgres:5432
     depends_on:
       - postgres
 
@@ -74,21 +76,33 @@ services:
     image: auth_service
     command: celery -A config.celery_app worker --loglevel=info
     env_file:
-      - .dev.env
+      - .env
     volumes:
       - .:/app
     depends_on:
       - redis
-      - auth_service
 
   celery-beat:
     container_name: celery-beat
     image: auth_service
     command: celery -A config.celery_app beat --loglevel=info -s ./celery/celerybeat-schedule
     env_file:
-      - .dev.env
+      - .env
     volumes:
       - .:/app
     depends_on:
       - redis
-      - auth_service
+
+  faust:
+    container_name: faust
+    image: auth_service
+    command: sh -c "/wait && faust -A config.faust_app:app worker -l info"
+    env_file:
+      - .env
+    environment:
+      WAIT_HOSTS: postgres:5432, kafka:9092
+    volumes:
+      - .:/app
+    depends_on:
+      - kafka
+      - postgres

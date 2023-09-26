@@ -76,7 +76,7 @@ class UserService(BaseService):
         try:
             serializer.is_valid(raise_exception=True)
         except (ValidationError, TokenError) as ve:
-            logging.error('Ошибка токена: %s', ve)
+            logging.error('Ошибка валидации токена: %s', ve)
             return False
         return True
 
