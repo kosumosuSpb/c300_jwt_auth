@@ -5,7 +5,8 @@
 **/.dev.env
 
 /c300_requirements
-/.db_temp
+/.db_temp/*
+!/.db_temp/.gitkeep
 /temp/
 
 **/*.sqlite*
@@ -13,6 +14,7 @@
 /celery/
 **/celerybeat-schedule*
 /apps/authorization/fixtures/
+/apps/authorization/migrations/
 
 !/.gitkeep
 **/*.log*

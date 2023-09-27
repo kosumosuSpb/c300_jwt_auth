@@ -4,6 +4,7 @@
 **/temp/
 */*.log*
 /.venv/
-/.db_temp/
+/.db_temp/*
+!/.db_temp/.gitkeep
 /*.sqlite*
 /apps/authorization/fixtures/

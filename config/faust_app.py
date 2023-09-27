@@ -50,6 +50,7 @@ class KafkaSender:
 
     def send(self, message, topic: str):
         """Отправка сообщения в топик"""
+        logger.debug('Отправка сообщения: %s', message)
         self.producer.send(topic, value=message)
 
 

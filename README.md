@@ -1,6 +1,6 @@
 # c300 Микросервис авторизации на JWT Cookies HTTPOnly
 
-**Пока на этапе теста**
+**на этапе разработки**
 
 [a07b09f](https://github.com/kosumosuSpb/c300_jwt_auth/commit/a07b09f9b5c6cbb1394a342b6f6d6d1447b71fba) - последний коммит с токенами не через куки
 
@@ -22,19 +22,7 @@
 
 ![Диаграмма БД](./readme_dir/db_diagram.png "Диаграмма БД")
 
-### Создание виртуального окружения
-
-    python3.11 -m venv .venv
-
-### Вход в виртуальное окружение
-
-    source ./venv/bin/activate
-
-### Установка зависимостей
-
-    pip install -r requirements.txt
-
-### Настройки окружения
+## Настройки окружения
 
 Нужно создать файл `.env` с содержимым: 
 
@@ -60,66 +48,60 @@
     EMAIL_HOST_USER=
     EMAIL_HOST_PASSWORD=
 
-### Тестовый запуск Django
+## Запуск
 
-    python manage.py runserver  # Запустится на 127.0.0.1:8000
+    docker-compose up
 
-### Запуск Kafka
+В тестовом варианте (не прод) сервис авторизации слушает порт `8000`, кафка `9094`, а постгрес доступен на `5432`
 
-    docker-compose up  # kafka будет доступна на localhost:9094
+Также надо учесть, что приложению нужен доступ на запись в папки `./logs` (для auth_service), `./celery` (для celery) и `./db_temp` (для postgres).
 
-### Запуск Faust
-
-    faust -A config.faust_app:app worker -l info
-
-### Запуск Celery
-
-Redis уже будет работать в контейнере после `docker-compose up`, либо можно запустить его отдельно: `docker-compose up redis`
-
-    celery -A config.celery_app worker --loglevel=info
-
-### Отправка тестовых данных
+## Отправка тестовых данных
 
 Чтобы получить токены доступа и обновления, нужно создать пользователя. 
 Можно создать суперпользователя, и авторизоваться через него, в ответ получить два токена: 
 `access` и `refresh`. `Access` нужен для аутентификации, а `Refresh` - для обновления access токена. 
 
-#### Регистрация суперпользователя:
+## Регистрация суперпользователя:
 
     python manage.py createsuperuser
 
-#### Регистрация пользователя: 
+## Регистрация пользователя: 
 
-После регистрации через `celery` будет отправлено письмо со ссылкой активации.
+После регистрации через `celery` будет отправлено письмо со ссылкой активации (если в `.env` `ACTIVATION=True`).
 
     curl --location 'http://localhost:8000/api/v1/register/' \
     --form 'email="some@email.ee"' \
     --form 'password="ghbdtn007"' \
     --form 'profile="{\"type\": \"worker\", \"first_name\": \"Роман\", \"last_name\": \"Романов\", \"birth_date\": \"2000-08-25T12:00:00+03:00\", \"sex\": \"male\"}"'
 
-#### Запрос на логин:
+### Необходимый минимум набора полей профиля для регистрации
+
+#### Для компании:
+* `type`
+* `name`
+
+#### Для человека:
+* `type` 
+* `first_name` 
+* `last_name` 
+* `birth_date`
+* `sex` 
+
+* Поле type может принимать только три значения: `company`, `worker` или `tenant`. 
+
+### Запрос на логин:
 
     curl --location 'http://localhost:8000/api/v1/login/' \
     --form 'email="another@email.go"' \
     --form 'password="pwdtoanotheruser"'
 
-#### Запрос на верификацию токена:
-
-_В текущей версии эндпоинт выключен, потому что это действие будет выполняться через Kafka._
-
-    curl --location 'http://localhost:8000/api/v1/verify/' \
-    --header 'Content-Type: application/json' \
-    --header 'Cookie: refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MDk5MDc4MiwiaWF0IjoxNjkwOTA0MzgyLCJqdGkiOiJjZDQxZDg0OTI1MjU0ZjdjOTgzMzY2NTI2NjdiY2RjMyIsInVzZXJfaWQiOjF9.HQSbmn1n6fSICgikfsPSdqdNrXZ8UsPs_gk_2Ys2Am0' \
-    --data '{
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkwODkxNjI2LCJpYXQiOjE2OTA4OTEwMjYsImp0aSI6IjU4ZmI4MTg1YTM4NjQ0YzI5MzA3ZDI3MTY3NDEzNWQzIiwidXNlcl9pZCI6MX0.51lO6L7ns_Kcrt9zlUudSVt8bGNl3DC_V8tYb5CXriM"
-    }'
-
-#### Запрос на обновление access токена:
+### Запрос на обновление access токена:
 
     curl --location --request POST 'http://localhost:8000/api/v1/login/refresh/' \
     --header 'Cookie: refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MDk5MDc4MiwiaWF0IjoxNjkwOTA0MzgyLCJqdGkiOiJjZDQxZDg0OTI1MjU0ZjdjOTgzMzY2NTI2NjdiY2RjMyIsInVzZXJfaWQiOjF9.HQSbmn1n6fSICgikfsPSdqdNrXZ8UsPs_gk_2Ys2Am0'
 
-#### Тестовый эндпоинт:
+### Тестовый эндпоинт:
 
 В тестовом эндпоинте срабатывает класс аутентификации с проверкой CSRF
 
@@ -127,13 +109,13 @@ _В текущей версии эндпоинт выключен, потому 
     --header 'X-CSRFToken: NfOYKJzqt3OeEnDrkn2BEcqa0BNdjJqh' \
     --header 'Cookie: access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkxMTUxMjQ2LCJpYXQiOjE2OTExNTA2NDIsImp0aSI6IjM2MzEwZDQwMzlmNjRiNzRhYTU0YTc2YWNlZThhOGNhIiwidXNlcl9pZCI6MX0.kwoF9xPf2xAf0EFL5Mp0oIE_XmZCY3yzMkdvNfUj4xU; csrftoken=NfOYKJzqt3OeEnDrkn2BEcqa0BNdjJqh; refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MTIzNzA0MiwiaWF0IjoxNjkxMTUwNjQyLCJqdGkiOiJhMGFlY2YwOGZjOTQ0NjIwODA2Y2ZkOTM4MDZjY2NhMyIsInVzZXJfaWQiOjF9.l27n3wc3QHSx6Vrgvn7jBeqvxUFp7Qsx_kzPXN03zpY'
 
-#### Выход:
+### Выход:
 
     curl --location --request POST 'http://localhost:8000/api/v1/logout/' \
     --header 'X-CSRFToken: ukbieqrjzNQxg5yg1JmmyfCRrNGJlLGy' \
     --header 'Cookie: access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkxMTUxMjQ2LCJpYXQiOjE2OTExNTA2NDIsImp0aSI6IjM2MzEwZDQwMzlmNjRiNzRhYTU0YTc2YWNlZThhOGNhIiwidXNlcl9pZCI6MX0.kwoF9xPf2xAf0EFL5Mp0oIE_XmZCY3yzMkdvNfUj4xU; csrftoken=NfOYKJzqt3OeEnDrkn2BEcqa0BNdjJqh; refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MTIzNzA0MiwiaWF0IjoxNjkxMTUwNjQyLCJqdGkiOiJhMGFlY2YwOGZjOTQ0NjIwODA2Y2ZkOTM4MDZjY2NhMyIsInVzZXJfaWQiOjF9.l27n3wc3QHSx6Vrgvn7jBeqvxUFp7Qsx_kzPXN03zpY'
 
-### Отправка данных в кафку
+### Отправка данных в кафку (запрос на валидацию токена)
 
 Пример в консоли:
 
@@ -144,12 +126,39 @@ _В текущей версии эндпоинт выключен, потому 
     producer.send('auth_request', value={'token': token})
 
 В логах фауста можно будет увидеть как агент получил токен, обработал, нашёл пользователя, отправил ответ в кафку и второй агент этот ответ принял
+
+Таким образом, чтобы проверить токен и получить id пользователя, нужно в шину кафки отправить словарь вида: 
+
+    {
+        'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk1NzM5NjU0LCJpYXQiOjE2OTU3MzkwNTQsImp0aSI6IjBmZmQyMDZlMjVhZjQ4ZjViOWM4MmYzNjViMWI3NmJjIiwidXNlcl9pZCI6MTN9.xG0xe62K8RngBbcAxIIdJ0E1ljrag-tCbNbPAObE73Y'
+    }
+
+В ответ будет отправлено одно из двух. В случае успеха придёт что-то вроде: 
+
+    {
+        'status': 'OK', 
+        'user_id': 13, 
+        'permissions': {
+            'is_superuser': False, 
+            'is_staff': False, '
+            is_active': True, 
+            'is_admin': False, 
+            'is_deleted': False
+            # список прав
+        }
+    }
+
+А если токен не валиден: 
+
+    {
+        'status': 'FAIL',
+        'user_id': '',
+        'permissions': '',
+    }
    
-## TODO
+# TODO
 
 * добавить permissions
-* засунуть сервис в контейнер так, чтобы обновления она брала через volumes и было доступно автообновление при изменении кода
 * решить, надо ли делать не валидными все токены, кроме одного рефреша в БД
 * настроить postgres в контейнере на приём с конкретных адресов (сейчас принимает запросы с любых)
-* подумать, как реализовать внешнее управление. (нужно только для с300, которая по сути так и остаётся монолитом. В ней ничего не меняется, так что пока ничего не надо делать)
 * обновление last_login даёт дополнительный запрос в БД. Нужно понять, насколько это критично и нужно ли
