@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "c300-jwt-auth"
+version = "0.1.0"
+description = ""
+authors = ["c300"]
+readme = "README.md"
+packages = [{include = "c300_jwt_auth"}]
+
+[tool.poetry.dependencies]
+python = "3.11.5"
+requests = ">=2.31.0,<2.32.0"
+django = ">=4.2.3,<4.3.0"
+djangorestframework = ">=3.14.0,<3.15.0"
+django-cors-headers = ">=4.2.0,<4.3.0"
+djangorestframework-simplejwt = ">=5.3.0,<5.4.0"
+pyjwt = ">=2.8.0,<2.9.0"
+pillow = ">=10.0.0,<10.1.0"
+faust-streaming = ">=0.10.14,<0.11.0"
+kafka-python = ">=2.0.2,<2.1.0"
+psycopg = ">=3.1.10,<3.2.0"
+python-dotenv = ">=1.0.0,<1.1.0"
+celery = ">=5.3.1,<5.4.0"
+redis = ">=5.0.0,<5.1.0"
+gunicorn = ">=21.2.0,<21.3.0"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.1.0"
+flake8-bugbear = "^23.9.16"
+flake8-simplify = "^0.21.0"
+flake8-builtins = "^2.1.0"
+flake8-import-order = "^0.18.2"
+pep8-naming = "^0.13.3"
+pre-commit = "^3.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
