@@ -5,16 +5,16 @@
 [a07b09f](https://github.com/kosumosuSpb/c300_jwt_auth/commit/a07b09f9b5c6cbb1394a342b6f6d6d1447b71fba) - последний коммит с токенами не через куки
 
 Основан на: 
-* Python 3.11
+* Python 3.11.5
 * Django 4.2
-* DRF
-* Simple JWT
-* JWT
+* DRF 3.14.0
+* Simple JWT 5.3.0
+* PyJWT 2.8.0
 * Faust-streaming 0.10.14
 * zookeeper + kafka в докере 
-* python-kafka 2.0.2
+* kafka-python 2.0.2
 * PostgreSQL (https://hub.docker.com/_/postgres)
-* celery
+* celery 5.3.1
 * redis
 
 
