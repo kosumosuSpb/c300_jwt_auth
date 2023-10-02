@@ -35,24 +35,24 @@ LOGGING = {
     # },
 
     'handlers': {
-        'file_handler': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'DEBUG',
-            'formatter': 'detailed',
-            "filename": "logs/debug.log",
-            'maxBytes': 102400,
-            'backupCount': 5,
-            # 'filters': ['lowererror'],
-        },
-        'file_handler_error': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'ERROR',
-            'formatter': 'detailed',
-            "filename": "logs/error.log",
-            'maxBytes': 102400,
-            'backupCount': 5,
-            # 'filters': ['lowererror'],
-        },
+        # 'file_handler': {
+        #     'class': 'logging.handlers.RotatingFileHandler',
+        #     'level': 'DEBUG',
+        #     'formatter': 'detailed',
+        #     "filename": "logs/debug.log",
+        #     'maxBytes': 102400,
+        #     'backupCount': 5,
+        #     # 'filters': ['lowererror'],
+        # },
+        # 'file_handler_error': {
+        #     'class': 'logging.handlers.RotatingFileHandler',
+        #     'level': 'ERROR',
+        #     'formatter': 'detailed',
+        #     "filename": "logs/error.log",
+        #     'maxBytes': 102400,
+        #     'backupCount': 5,
+        #     # 'filters': ['lowererror'],
+        # },
         'console': {
             'class': 'logging.StreamHandler',
             'level': 'DEBUG',

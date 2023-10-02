@@ -4,7 +4,8 @@
 **/temp/
 */*.log*
 /.venv/
-/.db_temp/*
-!/.db_temp/.gitkeep
+/postgres/*
+!/postgres/.gitkeep
 /*.sqlite*
 /apps/authorization/fixtures/
+/config/local_settings.py

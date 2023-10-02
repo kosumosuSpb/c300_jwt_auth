@@ -114,7 +114,7 @@ async def auth_requests_agent(stream):
             }
             logger.error('auth_requests_agent | Токен не валиден!')
             sender.send(msg, AUTH_RESPONSE)
-            return
+            continue
 
         token = value.token
         user_id = UserService.get_user_id_from_token(token)

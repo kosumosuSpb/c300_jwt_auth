@@ -70,8 +70,13 @@ class UserService(BaseService):
         return permissions
 
     @staticmethod
-    def verify_token(token: str) -> bool:
+    def verify_token(token: dict | str) -> bool:
         """Верификация токена"""
+        logger.debug('verify_token | Пришёл токен на валидацию: %s', token)
+
+        if isinstance(token, str):
+            token = {'token': token}
+
         serializer = TokenVerifySerializer(data=token)
         try:
             serializer.is_valid(raise_exception=True)
@@ -306,14 +311,20 @@ class UserService(BaseService):
         return user_id
 
     @classmethod
-    def _get_user_from_token(cls, token) -> UserData:
+    def _get_user_from_token(cls, token) -> UserData | None:
         """Возвращает пользователя, доставая его из токена"""
         user_id = cls.get_user_id_from_token(token)
+
+        if not user_id:
+            msg = 'Срок действия токена истёк!'
+            logger.error(msg)
+            raise ValidationError(msg)
+
         user_model = cls._get_user_from_user_id(user_id)
         return user_model
 
     @staticmethod
-    def _get_user_from_user_id(user_id: str | int) -> UserData | None:
+    def _get_user_from_user_id(user_id: str | int) -> UserData:
         """Вернёт модель пользователя"""
         if not isinstance(user_id, (str, int)):
             msg = 'Не верный тип user_id! должен быть str или int'

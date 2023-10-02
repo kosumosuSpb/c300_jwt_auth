@@ -38,7 +38,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./.db_temp:/var/lib/postgresql/data
+      - ./postgres/.db_temp:/var/lib/postgresql/data
     environment:
 #      - POSTGRES_DB=
 #      - POSTGRES_USER=
