@@ -18,7 +18,3 @@ require-plugins =
     flake8-builtins,
     pep8-naming,
     flake8-import-order
-
-
-
-extend-ignore = F401
