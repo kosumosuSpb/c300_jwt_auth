@@ -3,10 +3,10 @@
 **/.wenv
 **/.env
 **/.dev.env
+!**/.gitkeep
 
 /c300_requirements
-/postgres/*
-!/postgres/.gitkeep
+/service_data/*
 /temp/
 /config/local_settings.py
 
