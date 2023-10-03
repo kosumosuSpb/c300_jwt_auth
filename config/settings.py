@@ -17,7 +17,7 @@ from datetime import timedelta
 # from dotenv import load_dotenv
 
 
-from .logging_config import LOGGING
+from .logging_config import LOGGING  # noqa F401
 
 
 # .ENV
@@ -36,10 +36,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG') == True
+DEBUG = int(os.getenv('DEBUG', 0))
 
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(', ')
 
 
 # Application definition
@@ -132,7 +132,8 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SECURE': False,    # Whether the auth cookies should be secure (https:// only).
     'AUTH_COOKIE_HTTP_ONLY': True,  # Http only cookie flag. It's not fetch by javascript.
     'AUTH_COOKIE_PATH': '/',        # The path of the auth cookie.
-    'AUTH_COOKIE_SAMESITE': 'Lax',  # Whether to set the flag restricting cookie leaks on cross-site requests. This can be 'Lax', 'Strict', or None to disable the flag.
+    'AUTH_COOKIE_SAMESITE': 'Lax',  # Whether to set the flag restricting cookie leaks on cross-site requests.
+                                    # This can be 'Lax', 'Strict', or None to disable the flag.
 }
 
 AUTH_USER_MODEL = 'authorization.UserData'
@@ -242,4 +243,4 @@ WORKER = 'worker'
 TENANT = 'tenant'
 
 # REGISTRATION
-ACTIVATION = os.getenv('ACTIVATION') == True
+ACTIVATION = int(os.getenv('ACTIVATION', 0))

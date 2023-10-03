@@ -20,7 +20,6 @@ from apps.authorization.models.user_data import UserData
 from apps.authorization.serializers import UserRegistrationSerializer
 from apps.authorization.services.user_service import (
     UserService,
-    UserServiceException,
     ActivationError
 )
 from apps.authorization.permissions import IsSuperuser
@@ -48,7 +47,7 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
 
         user_validated_data: dict = serializer.validated_data
-        password = user_validated_data.get('password', None)
+        password = user_validated_data.get('password')
 
         logger.debug('SERIALIZER VALIDATED DATA: %s', user_validated_data)
 

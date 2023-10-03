@@ -3,8 +3,6 @@ import logging
 from apps.authorization.models.houses import HouseGroup, House
 from apps.authorization.models.area import Area
 from apps.authorization.models.company_profile import CompanyProfile
-from apps.authorization.models.tenant_profile import TenantProfile
-from apps.authorization.models.owner_area import OwnerArea
 
 
 logger = logging.getLogger(__name__)
@@ -29,13 +27,13 @@ class HouseService:
             number: str,
             letter: str | None = None,
             provider=None,
-            zip: str | None = None
+            postal_code: str | None = None
     ) -> House:
         """
         Создание дома
 
         Args:
-            zip: почтовый индекс
+            postal_code: почтовый индекс
             city:  город
             street: улица
             number: номер дома
@@ -44,7 +42,7 @@ class HouseService:
 
         Returns: Объект дома (модель)
         """
-        house = House.objects.create(city, street, number, letter, provider=provider, zip=zip)
+        house = House.objects.create(city, street, number, letter, provider=provider, zip=postal_code)
         logger.debug('Объект House создан: %s', house)
         return house
 

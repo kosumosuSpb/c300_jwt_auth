@@ -116,7 +116,7 @@ class UserData(AbstractUser):
     )
 
     @property
-    def type(self) -> str:
+    def type(self) -> str:  # noqa A003
         """Возвращает тип пользователя"""
         return self.profile.type
 

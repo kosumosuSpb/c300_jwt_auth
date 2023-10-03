@@ -1,21 +1,15 @@
-import sys
 import logging
-import datetime
 from http.cookies import Morsel
 
-import requests
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db.models.query import QuerySet
-from django.test import Client, tag
+from django.core.exceptions import ObjectDoesNotExist
+from django.test import Client
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from apps.authorization.models.user_data import UserData
 from apps.authorization.models.company_profile import CompanyProfile, Department
 from apps.authorization.services.user_service import UserService
-from apps.authorization.services.company_service import CompanyService
 
 
 logger = logging.getLogger(__name__)
@@ -107,7 +101,7 @@ class BaseTestCase(APITestCase):
         try:
             user: UserData = UserData.objects.get(email=self.email)
         except ObjectDoesNotExist as e:
-            logger.debug('Пользователь %s не найден', self.email)
+            logger.debug('Пользователь %s не найден (%s)', self.email, e)
         else:
             logger.debug('Пользователь %s найден, удаляем', self.email)
             user.delete()

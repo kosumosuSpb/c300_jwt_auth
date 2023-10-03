@@ -10,8 +10,6 @@ from apps.authorization.models import (
     TenantProfile,
     Department,
 )
-from apps.authorization.services.user_service import UserService
-from apps.authorization.services.company_service import CompanyService
 
 
 logger = logging.getLogger(__name__)

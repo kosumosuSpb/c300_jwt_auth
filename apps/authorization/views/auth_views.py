@@ -3,9 +3,7 @@ Login, Logout, TokenRefresh
 """
 import logging
 
-import jwt
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -15,7 +13,6 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
 
-from apps.authorization.services.user_service import UserService
 from apps.authorization.services.secure import (
     set_access_to_cookie,
     set_refresh_to_cookie,

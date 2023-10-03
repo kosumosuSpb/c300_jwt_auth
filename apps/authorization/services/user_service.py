@@ -1,24 +1,22 @@
 import logging
-import random
 import datetime
 
 import jwt
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import QuerySet, Prefetch
+from django.db.models import QuerySet
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.exceptions import ValidationError
 
 from apps.authorization.services.base_service import BaseService
 from apps.authorization.models import (
-    UserData,
     CompanyProfile,
-    Department,
+    CustomPermissionModel,
+    UserProfile,
+    UserData,
     TenantProfile,
     WorkerProfile,
-    UserProfile,
-    CustomPermissionModel
 )
 
 

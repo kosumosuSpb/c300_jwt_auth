@@ -1,5 +1,4 @@
 import datetime as dt
-import os
 import sys
 import logging
 
@@ -7,18 +6,21 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.query import QuerySet
-from django.test import Client, tag, override_settings
-from rest_framework.response import Response
-from rest_framework.test import APITestCase
+from django.test import tag, override_settings
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
-from unittest.mock import patch
 
-from apps.authorization.models import *
+from apps.authorization.models import (
+    CompanyProfile,
+    Department,
+    TenantProfile,
+    WorkerProfile,
+    UserData,
+)
 from apps.authorization.services.secure import make_activation_code
 from apps.authorization.services.company_service import CompanyService
 from apps.authorization.services.user_service import UserService
 from apps.authorization.tests.base_testcase import BaseTestCase
-from apps.authorization.tasks import delete_expired_tokens_from_db, send_activation_mail
+from apps.authorization.tasks import delete_expired_tokens_from_db
 
 
 logger = logging.getLogger(__name__)
@@ -155,7 +157,7 @@ class TestAccount(BaseTestCase):
     def test_create_user_with_wrong_email(self):
         logger.debug('test_create_user_with_wrong_email')
         with self.assertRaises(ValidationError):
-            user_tenant = self._create_tenant(email='aerg')
+            self._create_tenant(email='aerg')
 
     def test_activation_service(self):
         """Тест активации"""

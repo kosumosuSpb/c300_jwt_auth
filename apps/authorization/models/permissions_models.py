@@ -31,7 +31,7 @@ class CustomPermissionModel(models.Model):
         ('delete', DELETE)
     )
 
-    type = models.CharField(max_length=6, choices=TYPE_CHOICES)
+    type = models.CharField(max_length=6, choices=TYPE_CHOICES)  # noqa A003
     name = models.CharField(max_length=150)
     desc = models.CharField(max_length=255, blank=True, null=True)
     workers = models.ManyToManyField(

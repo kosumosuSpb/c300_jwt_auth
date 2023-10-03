@@ -1,11 +1,10 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import exceptions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authentication import CSRFCheck
-
-from django.conf import settings
 
 
 logger = logging.getLogger(__name__)

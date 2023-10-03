@@ -4,7 +4,6 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
 from apps.authorization.services.base_service import BaseService
-from apps.authorization.services.secure import make_activation_code
 
 
 logger = logging.getLogger(__name__)

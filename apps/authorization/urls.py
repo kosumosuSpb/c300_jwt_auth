@@ -24,4 +24,3 @@ urlpatterns = [
 
     # path('verify/', TokenVerifyAuthView.as_view(), name='token_verify'),
 ]
-

@@ -3,17 +3,16 @@ import os
 import json
 
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
-
 import faust
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
-from rest_framework.exceptions import ValidationError
 
-from apps.authorization.services.user_service import UserService
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
+
+from apps.authorization.services.user_service import UserService  # noqa F402
 
 
 logger = logging.getLogger(__name__)

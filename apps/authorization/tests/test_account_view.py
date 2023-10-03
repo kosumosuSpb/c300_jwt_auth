@@ -1,8 +1,8 @@
 import logging
-
-from django.test import Client, tag, override_settings
-from rest_framework.response import Response
 from unittest.mock import patch
+
+from django.test import override_settings
+from rest_framework.response import Response
 
 from apps.authorization.models import UserData
 from apps.authorization.tests.base_testcase import BaseTestCase

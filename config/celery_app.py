@@ -3,7 +3,6 @@ import logging
 
 from celery import Celery
 from celery.schedules import crontab
-import django
 
 logger = logging.getLogger(__name__)
 

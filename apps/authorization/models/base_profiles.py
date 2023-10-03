@@ -13,7 +13,7 @@ class UserProfile(models.Model):
     class Meta:
         abstract = True
 
-    type = models.CharField(max_length=7, choices=TYPE_CHOICES)
+    type = models.CharField(max_length=7, choices=TYPE_CHOICES)  # noqa A003
 
 
 class HumanBaseProfile(UserProfile):
