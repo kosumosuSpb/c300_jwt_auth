@@ -3,6 +3,7 @@
 **/.wenv
 **/.env
 **/.dev.env
+
 !**/.gitkeep
 
 /c300_requirements
@@ -12,12 +13,10 @@
 
 **/*.sqlite*
 /*-data/
-/celery/
 **/celerybeat-schedule*
 /apps/authorization/fixtures/
 /apps/authorization/migrations/
 
-!/.gitkeep
 **/*.log*
 
 # poetry
