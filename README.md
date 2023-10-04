@@ -52,9 +52,38 @@
 
     docker-compose up --build
 
-В тестовом варианте (не прод) сервис `auth_service` слушает порт `8000`, `kafka` - `9094`, а `postgres` доступен на `5432`
+В тестовом варианте (не прод) сервис `auth_service` слушает порт `8000`, `kafka` - `9094`, 
+а `postgres` доступен на `5432`
 
-Также надо учесть, что приложению нужен доступ на запись в папки `./logs` (для `auth_service`), `./service_data` (для `celery`, `faust` и `postgres`).
+Также надо учесть, что приложению нужен доступ на запись в папки `./logs` (для `auth_service`), 
+`./service_data` (для `celery`, `faust` и `postgres`).
+
+## Для разработки
+
+### Poetry, пре-коммиты и flake8
+
+Нужно использовать **flake8** и **пре-коммиты**. После скачивания проекта в его корне будут лежать файлы 
+`pyproject.toml`, `.flake8` и `.pre-commit-config.yaml`. 
+Необходимо иметь установленный `poetry`. Последовательность действий:
+
+Если `poerty` установлен глобально (рекомендуется документацией):
+
+    python -m venv .venv
+    poetry shell
+    poetry install
+    commit install
+
+Если `poetry` нет или планируется локальная установка, то сначала нужно будет войти в окружение:
+
+    source ./.venv/bin/activate
+
+и уже после установки `poetry` продолжать с `poetry install` итд
+
+### Файлы docker-compose
+
+Для прода используется `docker-compose.prod.yml` (пока не настроен правильно), 
+а для разработки - `docker-compose.yml` (он использует `runserver` и там настроены `volumes` так, 
+чтобы приложение запускалось не из контейнера, а из папки с проектом).
 
 ## Отправка тестовых данных
 
@@ -64,7 +93,8 @@
 
 ## Регистрация пользователя: 
 
-После регистрации через `celery` будет отправлено письмо со ссылкой активации (если в `.env` `ACTIVATION=True`).
+После регистрации через `celery` будет отправлено письмо со ссылкой активации 
+(если в `.env` `ACTIVATION=True`).
 
     curl --location 'http://localhost:8000/api/v1/register/' \
     --form 'email="some@email.ee"' \
@@ -121,9 +151,11 @@
     token = ''  # тут ввести access токен
     producer.send('auth_request', value={'token': token})
 
-В логах фауста можно будет увидеть как агент получил токен, обработал, нашёл пользователя, отправил ответ в кафку и второй агент этот ответ принял
+В логах фауста можно будет увидеть как агент получил токен, обработал, нашёл пользователя, 
+отправил ответ в кафку и второй агент этот ответ принял
 
-Таким образом, чтобы проверить токен и получить id пользователя, нужно в шину кафки отправить словарь вида: 
+Таким образом, чтобы проверить токен и получить id пользователя, 
+нужно в шину кафки отправить словарь вида: 
 
     {
         'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk1NzM5NjU0LCJpYXQiOjE2OTU3MzkwNTQsImp0aSI6IjBmZmQyMDZlMjVhZjQ4ZjViOWM4MmYzNjViMWI3NmJjIiwidXNlcl9pZCI6MTN9.xG0xe62K8RngBbcAxIIdJ0E1ljrag-tCbNbPAObE73Y'

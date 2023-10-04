@@ -8,8 +8,6 @@ WORKDIR /app/
  COPY ./requirements.txt ./requirements.txt
 #COPY . .
 
-#EXPOSE 8000
-
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
 #    sudo apt install python3-dev libpq-dev && \
