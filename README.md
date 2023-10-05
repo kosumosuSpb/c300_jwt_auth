@@ -82,6 +82,15 @@
 
 и уже после установки `poetry` продолжать с `poetry install` итд
 
+При разработке перед коммитом для проверки файлов под требования PEP нужно сначала запустить 
+(плюсом будет произведено и обновление `requirements.txt`) 
+
+    pre-commit run --all-files
+
+Только для обновления файла зависимостей нужно запустить 
+
+    poetry export --without-hashes -f requirements.txt -o requirements.txt
+
 ### Файлы docker-compose
 
 Для прода используется `docker-compose.prod.yml` (пока не настроен правильно), 

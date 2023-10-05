@@ -10,6 +10,8 @@
 import logging
 
 from django.conf import settings
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -35,6 +37,19 @@ class RegisterView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @swagger_auto_schema(
+        request_body=UserRegistrationSerializer,
+        operation_summary='Регистрация нового пользователя',
+        responses={
+            status.HTTP_201_CREATED: openapi.Response(
+                description='Пользователь создан',
+                schema=UserRegistrationSerializer,
+            ),
+            status.HTTP_400_BAD_REQUEST: openapi.Response(
+                description='Invalid data'
+            )
+        }
+    )
     def post(self, request: Request):
         logger.debug('RegisterView | POST | request data: %s',
                      request.data)
@@ -84,6 +99,7 @@ class UserDeleteView(APIView):
 
 
 class PasswordChangeView(APIView):
+    """Изменение пароля"""
     def post(self, request: Request, *args, **kwargs):
         logger.debug('PasswordChangeView | POST')
 
@@ -113,6 +129,7 @@ class ManualActivateAccountView(APIView):
 
 
 class ActivateAccountView(APIView):
+    """Активация аккаунта"""
     authentication_classes = []
     permission_classes = []
 
@@ -154,7 +171,7 @@ class ActivateAccountView(APIView):
 
 
 class TestView(APIView):
-
+    """Тестовый эндпоинт с включённым CSRF"""
     def post(self, request: Request, *args, **kwargs):
         logger.debug('TestView | request data: %s', request.data)
         logger.debug('TestView | request COOKIES: %s', request.COOKIES)

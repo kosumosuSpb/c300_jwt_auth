@@ -29,7 +29,7 @@ REFRESH_TOKEN = settings.SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
 
 class LoginView(TokenObtainPairView):
-
+    """Логин пользователя"""
     def post(self, request: Request, *args, **kwargs) -> Response:
         """Получает токены через супер во время логина и перемещает их в куки"""
         logger.debug('Login | request: %s, request.data: %s', request, request.data)
@@ -65,7 +65,7 @@ class LoginView(TokenObtainPairView):
 
 
 class TokenRefreshCookieView(TokenRefreshView):
-    """Класс для обновления токена доступа"""
+    """Обновление токена доступа"""
     def post(self, request: Request, *args, **kwargs) -> Response:
         old_access_token = request.COOKIES.pop(ACCESS_TOKEN, None)
         logger.debug('Refresh | Наличие токена доступа в запросе: %s',
@@ -114,6 +114,7 @@ class TokenRefreshCookieView(TokenRefreshView):
 
 
 class LogoutView(APIView):
+    """Выход пользователя из системы"""
     def post(self, request: Request, *args, **kwargs) -> Response:
         logger.debug('Logout')
         response = Response(

@@ -10,10 +10,8 @@ WORKDIR /app/
 
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
-#    sudo apt install python3-dev libpq-dev && \
     pip install psycopg[binary] && \
-    adduser --disabled-password --no-create-home app && \
-    mkdir /celery && chown -R app /celery
+    adduser --disabled-password --no-create-home app
 
 RUN chown app . -R
 
