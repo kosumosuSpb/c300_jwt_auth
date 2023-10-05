@@ -49,7 +49,7 @@ class KafkaSender:
 
     def send(self, message, topic: str):
         """Отправка сообщения в топик"""
-        logger.debug('Отправка сообщения: %s', message)
+        logger.info('Отправка сообщения: %s', message)
         self.producer.send(topic, value=message)
 
 
@@ -58,7 +58,7 @@ sender = KafkaSender([settings.KAFKA_URL, ])
 app = faust.App(
     'auth_bus',
     broker=settings.KAFKA_URL,
-    # store='rocksdb://'
+    store='rocksdb://',
     autodiscovery=True,
 )
 
@@ -119,8 +119,8 @@ async def auth_requests_agent(stream):
         user_id = UserService.get_user_id_from_token(token)
 
         # user_service = UserService(user_id)
-        get_user_service = sync_to_async(UserService, thread_sensitive=True)
-        user_service = await get_user_service(user_id)
+        async_user_service = sync_to_async(UserService, thread_sensitive=True)
+        user_service = await async_user_service(user_id)
 
         async_get_permissions = sync_to_async(user_service.get_permissions, thread_sensitive=True)
         permissions = await async_get_permissions()

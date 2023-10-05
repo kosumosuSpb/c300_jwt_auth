@@ -26,37 +26,40 @@
 
 Нужно создать файл `.env` с содержимым: 
 
-    DEBUG=
+    DEBUG=1
     DJANGO_SETTINGS_MODULE=config.settings
     SECRET_KEY=
-    ACTIVATION=False
+    ALLOWED_HOSTS=*
+    ACTIVATION=0
     
-    DB_NAME=
-    DB_USERNAME=
-    DB_HOST=localhost
+    DB_NAME=postgres
+    DB_USERNAME=postgres
+    DB_HOST=postgres
     DB_PORT=5432
     DB_PASS=example
     
-    CELERY_BROKER_URL=redis://localhost:6379/0
-    CELERY_RESULT_BACKEND=redis://localhost:6379/0
+    CELERY_BROKER_URL=redis://redis:6379/0
+    CELERY_RESULT_BACKEND=redis://redis:6379/0
     
-    KAFKA_URL=kafka://localhost:9094
+    KAFKA_URL=kafka://kafka:9092
     
     DEFAULT_FROM_EMAIL=
     EMAIL_HOST=
-    EMAIL_PORT=
+    EMAIL_PORT=25
     EMAIL_HOST_USER=
     EMAIL_HOST_PASSWORD=
+
+Булевы значения обозначаются `1` для `True` или `0` для `False`
 
 ## Запуск
 
     docker-compose up --build
 
-В тестовом варианте (не прод) сервис `auth_service` слушает порт `8000`, `kafka` - `9094`, 
+В тестовом варианте (не в проде) сервис `auth_service` слушает порт `8000`, `kafka` - `9094`, 
 а `postgres` доступен на `5432`
 
-Также надо учесть, что приложению нужен доступ на запись в папки `./logs` (для `auth_service`), 
-`./service_data` (для `celery`, `faust` и `postgres`).
+Также надо учесть, что приложению нужен доступ на запись в папки `./logs` (для **auth_service**), 
+`./service_data` (для **celery**, **faust** и **postgres**).
 
 ## Для разработки
 
@@ -147,6 +150,7 @@
 
     from kafka import KafkaProducer
     import json
+
     producer = KafkaProducer(bootstrap_servers=['localhost:9094'], value_serializer=lambda x: json.dumps(x).encode('utf-8'))
     token = ''  # тут ввести access токен
     producer.send('auth_request', value={'token': token})
@@ -169,7 +173,7 @@
         'permissions': {
             'is_superuser': False, 
             'is_staff': False, '
-            is_active': True, 
+            'is_active': True, 
             'is_admin': False, 
             'is_deleted': False
             # список прав

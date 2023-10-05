@@ -5,7 +5,8 @@ exclude =
     .venv,
     .env,
     migrations,
-    __init__.py
+    __init__.py,
+    temp
 max-line-length = 120
 max-complexity = 10
 show-source = True
