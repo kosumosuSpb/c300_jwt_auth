@@ -40,6 +40,7 @@ class RegisterView(APIView):
     @swagger_auto_schema(
         request_body=UserRegistrationSerializer,
         operation_summary='Регистрация нового пользователя',
+        tags=['account'],
         responses={
             status.HTTP_201_CREATED: openapi.Response(
                 description='Пользователь создан',
@@ -84,6 +85,10 @@ class RegisterView(APIView):
 
 class UserDeleteView(APIView):
     """Удаление пользователя"""
+
+    @swagger_auto_schema(
+        tags=['account'],
+    )
     def post(self, request: Request, *args, **kwargs):
         logger.debug('UserDeleteView | POST')
         logger.debug('Удаление пользователя %s', request.user)
@@ -100,6 +105,10 @@ class UserDeleteView(APIView):
 
 class PasswordChangeView(APIView):
     """Изменение пароля"""
+
+    @swagger_auto_schema(
+        tags=['account'],
+    )
     def post(self, request: Request, *args, **kwargs):
         logger.debug('PasswordChangeView | POST')
 
@@ -108,6 +117,9 @@ class ManualActivateAccountView(APIView):
     """Ручная активация аккаунта"""
     permission_classes = [IsAdminUser, IsSuperuser]
 
+    @swagger_auto_schema(
+        tags=['account'],
+    )
     def post(self, request: Request, *args, **kwargs):
         logger.debug('ManualActivateAccountView | POST')
         user_id = request.query_params.get('user_id')
@@ -133,6 +145,9 @@ class ActivateAccountView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @swagger_auto_schema(
+        tags=['account'],
+    )
     def get(self, request: Request, *args, **kwargs):
         logger.debug('ActivateAccountView')
 
@@ -172,6 +187,10 @@ class ActivateAccountView(APIView):
 
 class TestView(APIView):
     """Тестовый эндпоинт с включённым CSRF"""
+
+    @swagger_auto_schema(
+        tags=['account'],
+    )
     def post(self, request: Request, *args, **kwargs):
         logger.debug('TestView | request data: %s', request.data)
         logger.debug('TestView | request COOKIES: %s', request.COOKIES)

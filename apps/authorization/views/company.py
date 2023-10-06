@@ -1,5 +1,6 @@
 import logging
 
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -14,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 class DepartmentCreateView(APIView):
     # TODO: добавить права
-
+    @swagger_auto_schema(
+        tags=['company'],
+    )
     def post(self, request: Request, **kwargs):
         """Создание отдела компании"""
         logger.debug('DepartmentCreateView | POST | request.data: %s',

@@ -4,6 +4,8 @@ Login, Logout, TokenRefresh
 import logging
 
 from django.conf import settings
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -29,9 +31,24 @@ REFRESH_TOKEN = settings.SIMPLE_JWT.get('AUTH_COOKIE_REFRESH')
 
 
 class LoginView(TokenObtainPairView):
-    """Логин пользователя"""
+    """User sign in (login)"""
+
+    @swagger_auto_schema(
+        operation_summary='User sign in (login)',
+        tags=['auth'],
+        responses={
+            status.HTTP_200_OK: openapi.Response(
+                description='Get JWT (access, refresh) in cookie',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='No active account found with the given credentials',
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
+                description='Has not tokens in answer',
+            )
+        }
+    )
     def post(self, request: Request, *args, **kwargs) -> Response:
-        """Получает токены через супер во время логина и перемещает их в куки"""
         logger.debug('Login | request: %s, request.data: %s', request, request.data)
 
         old_access_token = request.COOKIES.pop(ACCESS_TOKEN, None)
@@ -65,7 +82,23 @@ class LoginView(TokenObtainPairView):
 
 
 class TokenRefreshCookieView(TokenRefreshView):
-    """Обновление токена доступа"""
+    """Get new access token"""
+
+    @swagger_auto_schema(
+        operation_summary='Get new access token',
+        tags=['auth'],
+        responses={
+            status.HTTP_200_OK: openapi.Response(
+                description='Get JWT (new access) in cookie',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='No valid token found in cookie "refresh_token"',
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
+                description='Has not tokens in answer',
+            )
+        }
+    )
     def post(self, request: Request, *args, **kwargs) -> Response:
         old_access_token = request.COOKIES.pop(ACCESS_TOKEN, None)
         logger.debug('Refresh | Наличие токена доступа в запросе: %s',
@@ -114,7 +147,33 @@ class TokenRefreshCookieView(TokenRefreshView):
 
 
 class LogoutView(APIView):
-    """Выход пользователя из системы"""
+    """User logout"""
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name='X-CSRFToken',
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                description='CSRF token',
+                required=True,
+            ),
+        ],
+        operation_summary='User logout',
+        tags=['auth'],
+        responses={
+            status.HTTP_204_NO_CONTENT: openapi.Response(
+                description='No Content',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='Authentication credentials were not provided',
+            ),
+            status.HTTP_403_FORBIDDEN: openapi.Response(
+                description='CSRF Failed: CSRF token missing, '
+                            'CSRF Failed: CSRF token from the "X-Csrftoken" HTTP header incorrect',
+            ),
+        }
+    )
     def post(self, request: Request, *args, **kwargs) -> Response:
         logger.debug('Logout')
         response = Response(

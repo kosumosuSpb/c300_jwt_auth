@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "c300-jwt-auth"
+name = "c300-auth"
 version = "0.1.0"
 description = ""
 authors = ["c300"]
 readme = "README.md"
-packages = [{include = "c300_jwt_auth"}]
+packages = [{include = "c300_auth"}]
 
 [tool.poetry.dependencies]
 python = "3.11.5"
