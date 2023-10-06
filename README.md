@@ -74,7 +74,7 @@
     python -m venv .venv
     poetry shell
     poetry install
-    commit install
+    pre-commit install
 
 Если `poetry` нет или планируется локальная установка, то сначала нужно будет войти в окружение:
 
