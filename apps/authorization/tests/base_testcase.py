@@ -23,12 +23,12 @@ class BaseTestCase(APITestCase):
     def setUpTestData(cls):
         # ENDPOINTS
         base_api_url = '/api/v1/'
-        cls.login_url = base_api_url + 'login/'
-        cls.refresh_url = base_api_url + 'login/refresh/'
-        cls.logout_url = base_api_url + 'logout/'
-        cls.test_url = base_api_url + 'test/'
-        cls.activation_url = base_api_url + 'activate/'
-        cls.reg_url = base_api_url + 'register/'
+        cls.login_url = base_api_url + 'auth/login/'
+        cls.refresh_url = base_api_url + 'auth/refresh/'
+        cls.logout_url = base_api_url + 'auth/logout/'
+        cls.test_url = base_api_url + 'account/test/'
+        cls.activation_url = base_api_url + 'account/activate/'
+        cls.reg_url = base_api_url + 'account/register/'
         # ACC VARIABLES
         cls.email = 'base@email.one'
         cls.password = 'somePassWord1'
