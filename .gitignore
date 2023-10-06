@@ -4,8 +4,6 @@
 **/.env
 **/.dev.env
 
-!**/.gitkeep
-
 /c300_requirements
 /service_data/*
 /temp/
@@ -15,9 +13,11 @@
 /*-data/
 **/celerybeat-schedule*
 /apps/authorization/fixtures/
-/apps/authorization/migrations/
+/apps/authorization/migrations/*
+!/apps/authorization/migrations/__init__.py
 
 **/*.log*
+!**/.gitkeep
 
 # poetry
 poetry.lock
