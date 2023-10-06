@@ -1,19 +1,16 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.11.5
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app/
 
-# COPY ./requirements.txt ./requirements.txt
-COPY . .
+COPY ./requirements.txt ./requirements.txt
 
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
-    pip install psycopg[binary] && \
-    adduser --disabled-password --no-create-home app
-
-RUN chown app . -R
+    adduser --disabled-password --no-create-home app && \
+    mkdir /celery && chown -R app /celery
 
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.0/wait /wait
 RUN chmod +x /wait

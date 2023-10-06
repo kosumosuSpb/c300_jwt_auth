@@ -16,9 +16,12 @@ Including another URLconf
 """
 # from django.contrib import admin
 from django.urls import path
-from django.conf import settings
 from django.conf.urls import include
 
+from config.settings import (
+    API_BASE_URL,
+    DEBUG,
+)
 from config.swagger import urlpatterns as docs
 
 # from apps.authorization.urls import router
@@ -26,9 +29,10 @@ from config.swagger import urlpatterns as docs
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    # path('api/v1/', include(router.urls)),
-    path('api/v1/', include('apps.authorization.urls')),
+    path(API_BASE_URL+'auth/', include('apps.authorization.urls.auth')),
+    path(API_BASE_URL+'account/', include('apps.authorization.urls.account')),
+    path(API_BASE_URL+'company/', include('apps.authorization.urls.company')),
 ]
 
-if settings.DEBUG:
+if DEBUG:
     urlpatterns += docs

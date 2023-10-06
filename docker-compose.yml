@@ -10,6 +10,8 @@ services:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - c300_auth
 
   kafka:
     container_name: kafka
@@ -29,6 +31,8 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
 #      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://:9094
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    networks:
+      - c300_auth
 
   postgres:
     container_name: postgres
@@ -43,6 +47,8 @@ services:
 #      - POSTGRES_DB=
 #      - POSTGRES_USER=
       - POSTGRES_PASSWORD=example
+    networks:
+      - c300_auth
 
   redis:
     container_name: redis
@@ -50,6 +56,8 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    networks:
+      - c300_auth
 
   auth_service:
     container_name: auth_service
@@ -58,7 +66,7 @@ services:
       dockerfile: Dockerfile
     image: auth_service
 #    command: sh -c "/wait && python manage.py makemigrations && python manage.py migrate && gunicorn --env DJANGO_SETTINGS_MODULE=config.settings config.wsgi -b :8000 --reload"
-    command: sh -c "/wait && python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "/wait && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
 #      - ./logs:/app/logs
@@ -70,28 +78,36 @@ services:
       WAIT_HOSTS: postgres:5432
     depends_on:
       - postgres
+    networks:
+      - c300_auth
 
   celery:
     container_name: celery
     image: auth_service
-    command: celery -A config.celery_app worker --loglevel=info
+    command: >
+      sh -c "celery -A config.celery_app worker --loglevel=info"
     env_file:
       - .env
     volumes:
       - .:/app
     depends_on:
       - redis
+    networks:
+      - c300_auth
 
   celery-beat:
     container_name: celery-beat
     image: auth_service
-    command: celery -A config.celery_app beat --loglevel=info -s ./service_data/celerybeat-schedule
+    command: > 
+      sh -c "celery -A config.celery_app beat --loglevel=info -s ./service_data/celerybeat-schedule"
     env_file:
       - .env
     volumes:
       - .:/app
     depends_on:
       - redis
+    networks:
+      - c300_auth
 
   faust:
     container_name: faust
@@ -106,6 +122,8 @@ services:
     depends_on:
       - kafka
       - postgres
+    networks:
+      - c300_auth
 
 #  nginx:
 #      container_name: "nginx"
@@ -124,3 +142,8 @@ services:
 #        - app
 #      networks:
 #        - django_elk_network
+
+
+networks:
+  c300_auth:
+    driver: bridge
