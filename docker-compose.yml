@@ -6,8 +6,8 @@ services:
     image: zookeeper:latest
     restart: always
     hostname: zoo
-    ports:
-      - "2181:2181"
+#    ports:
+#      - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
@@ -36,7 +36,7 @@ services:
 
   postgres:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:16
     restart: unless-stopped
     hostname: postgres
     ports:

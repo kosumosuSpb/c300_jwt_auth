@@ -64,10 +64,12 @@ app = faust.App(
 
 
 class AuthRequest(faust.Record):
+    id: str  # noqa A003
     token: str
 
 
 class AuthResponse(faust.Record):
+    id: str  # noqa A003
     status: str
     user_id: str
     permissions: dict
@@ -92,6 +94,8 @@ async def auth_requests_agent(stream):
     async for value in stream:
         assert isinstance(value, AuthRequest), 'Не верный тип: должен быть AuthRequest'
         logger.info('auth_requests_agent | Value in faust stream: %s', value)
+        # logger.info('auth_requests_agent | Value id: %s', value.id)
+        # logger.info('auth_requests_agent | Value token: %s', value.token)
         logger.info('auth_requests_agent | Value as dict: %s', value.asdict())
 
         if not value.token:
@@ -107,6 +111,7 @@ async def auth_requests_agent(stream):
 
         if not is_valid:
             msg = {
+                'id': value.id,
                 'status': 'FAIL',
                 'user_id': '',
                 'permissions': '',
@@ -125,6 +130,7 @@ async def auth_requests_agent(stream):
         async_get_permissions = sync_to_async(user_service.get_permissions, thread_sensitive=True)
         permissions = await async_get_permissions()
         msg = {
+            'id': value.id,
             'status': 'OK',
             'user_id': user_id,
             'permissions': permissions,
