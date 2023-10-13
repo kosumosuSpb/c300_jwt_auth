@@ -161,24 +161,35 @@
 
     from kafka import KafkaProducer
     import json
+    import uuid
 
-    producer = KafkaProducer(bootstrap_servers=['localhost:9094'], value_serializer=lambda x: json.dumps(x).encode('utf-8'))
+    producer = KafkaProducer(
+        bootstrap_servers=['localhost:9094'], 
+        value_serializer=lambda x: json.dumps(x).encode('utf-8'),
+        key_serializer=lambda x: json.dumps(x).encode('utf-8')
+    )
+    uid = str(uuid.uuid4())
     token = ''  # тут ввести access токен
-    producer.send('auth_request', value={'token': token})
+    producer.send('auth_request', value={'id': uid, 'token': token}, key=uid)
 
 В логах фауста можно будет увидеть как агент получил токен, обработал, нашёл пользователя, 
-отправил ответ в кафку и второй агент этот ответ принял
+отправил ответ в кафку и второй агент этот ответ принял.
+
+`key` нужно указывать в запросе, чтобы ответ потом авторизация отправила, используя его же, 
+для того, чтобы этот ответ получил тот же экземпляр сервиса, который его отправил (потому что он попадёт в ту же партицию)
 
 Таким образом, чтобы проверить токен и получить id пользователя, 
 нужно в шину кафки отправить словарь вида: 
 
     {
+        'id': uid,
         'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk1NzM5NjU0LCJpYXQiOjE2OTU3MzkwNTQsImp0aSI6IjBmZmQyMDZlMjVhZjQ4ZjViOWM4MmYzNjViMWI3NmJjIiwidXNlcl9pZCI6MTN9.xG0xe62K8RngBbcAxIIdJ0E1ljrag-tCbNbPAObE73Y'
     }
 
 В ответ будет отправлено одно из двух. В случае успеха придёт что-то вроде: 
 
     {
+        'id': uid,
         'status': 'OK', 
         'user_id': 13, 
         'permissions': {
@@ -194,6 +205,7 @@
 А если токен не валиден: 
 
     {
+        'id': uid,
         'status': 'FAIL',
         'user_id': '',
         'permissions': '',

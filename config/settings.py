@@ -246,4 +246,4 @@ TENANT = 'tenant'
 # REGISTRATION
 ACTIVATION = int(os.getenv('ACTIVATION', 0))
 
-API_BASE_URL = 'api/v1/'
+API_BASE_URL = 'auth/api/v1/'

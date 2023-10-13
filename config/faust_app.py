@@ -1,13 +1,10 @@
 import logging
 import os
-import json
 
 import django
 import faust
 from asgiref.sync import sync_to_async
 from django.conf import settings
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
@@ -21,39 +18,6 @@ logger = logging.getLogger(__name__)
 AUTH_REQUEST = 'auth_request'
 AUTH_RESPONSE = 'auth_response'
 
-
-class KafkaSender:
-    """Простой класс для отправки сообщений в кафку"""
-    def __init__(self, kafka_servers: list[str] | None = None):
-        self.servers = self._cut_url_string(kafka_servers)
-        self.producer = self._get_producer()
-
-    def _get_producer(self):
-        try:
-            kafka_producer = KafkaProducer(
-                bootstrap_servers=self.servers,
-                value_serializer=lambda x: json.dumps(x).encode('utf-8')
-            )
-        except NoBrokersAvailable as e:
-            logger.error('Kafka Broker Error: %s', e)
-            logger.error('Servers in args: %s', self.servers)
-            logger.error('settings.KAFKA_URL: %s', settings.KAFKA_URL)
-            raise
-        return kafka_producer
-
-    @staticmethod
-    def _cut_url_string(servers: list[str]):
-        """Убирает kafka:// перед серверами"""
-        new_servers = list(map(lambda server: server.replace('kafka://', ''), servers))
-        return new_servers
-
-    def send(self, message, topic: str):
-        """Отправка сообщения в топик"""
-        logger.info('Отправка сообщения: %s', message)
-        self.producer.send(topic, value=message)
-
-
-sender = KafkaSender([settings.KAFKA_URL, ])
 
 app = faust.App(
     'auth_bus',
@@ -88,14 +52,14 @@ response_topic = app.topic(
 
 
 @app.agent(request_topic)
-async def auth_requests_agent(stream):
+async def auth_requests_agent(stream: faust.streams.Stream[AuthRequest]):
     """Принимает стрим из фауст+кафка из топика request_topic"""
     logger.info('auth_requests_agent started')
     async for value in stream:
         assert isinstance(value, AuthRequest), 'Не верный тип: должен быть AuthRequest'
+        current_key = faust.current_event().key
+        logger.info('auth_requests_agent | ключ текущего сообщения: %s', current_key)
         logger.info('auth_requests_agent | Value in faust stream: %s', value)
-        # logger.info('auth_requests_agent | Value id: %s', value.id)
-        # logger.info('auth_requests_agent | Value token: %s', value.token)
         logger.info('auth_requests_agent | Value as dict: %s', value.asdict())
 
         if not value.token:
@@ -117,7 +81,7 @@ async def auth_requests_agent(stream):
                 'permissions': '',
             }
             logger.error('auth_requests_agent | Токен не валиден!')
-            sender.send(msg, AUTH_RESPONSE)
+            await response_topic.send(key=value.id, value=msg)
             continue
 
         token = value.token
@@ -137,7 +101,7 @@ async def auth_requests_agent(stream):
         }
 
         logger.info('auth_requests_agent | Отправка ответа: %s', msg)
-        sender.send(msg, AUTH_RESPONSE)
+        await response_topic.send(key=value.id, value=msg)
 
 
 @app.agent(response_topic)

@@ -305,6 +305,9 @@ class UserService(BaseService):
 
         logger.debug('PAYLOAD: %s', payload)
         user_id = payload.get('user_id')
+        date_exp = payload.get('exp')
+        date_exp = datetime.datetime.fromtimestamp(date_exp) if date_exp else None
+        logger.debug('date expiration: %s', date_exp)
         logger.debug('user_id from token: %s', user_id)
         return user_id
 

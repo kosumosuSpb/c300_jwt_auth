@@ -22,7 +22,7 @@ class BaseTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         # ENDPOINTS
-        base_api_url = '/api/v1/'
+        base_api_url = '/' + settings.API_BASE_URL
         cls.login_url = base_api_url + 'auth/login/'
         cls.refresh_url = base_api_url + 'auth/refresh/'
         cls.logout_url = base_api_url + 'auth/logout/'
