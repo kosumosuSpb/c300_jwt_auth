@@ -170,7 +170,7 @@
     )
     uid = str(uuid.uuid4())
     token = ''  # тут ввести access токен
-    producer.send('auth_request', value={'id': uid, 'token': token}, key=uid)
+    producer.send('auth_request', value={'id': uid, 'token': token}, key='service_id_or_name')
 
 В логах фауста можно будет увидеть как агент получил токен, обработал, нашёл пользователя, 
 отправил ответ в кафку и второй агент этот ответ принял.
