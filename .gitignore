@@ -8,6 +8,7 @@ __pycache__/
 **/.wenv
 **/.env
 **/.dev.env
+.coverage
 
 /c300_requirements
 /service_data/*

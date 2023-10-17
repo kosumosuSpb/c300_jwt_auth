@@ -23,6 +23,7 @@ celery = ">=5.3.1,<5.4.0"
 redis = ">=5.0.0,<5.1.0"
 gunicorn = ">=21.2.0,<21.3.0"
 drf-yasg = "^1.21.7"
+coverage = "^7.3.2"
 
 
 [tool.poetry.group.dev.dependencies]
