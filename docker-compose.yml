@@ -110,7 +110,7 @@ services:
   faust:
     container_name: faust
     image: auth_service
-    command: sh -c "/wait && faust --datadir ./service_data/faust/ -A config.faust_app:app worker -l info"
+    command: sh -c "/wait && faust --datadir ./service_data/faust/ -A config.faust_app:app worker -l info --without-web"
     env_file:
       - .env
     environment:
@@ -124,7 +124,7 @@ services:
       - c300_auth
 
 #  nginx:
-#      container_name: "nginx"
+#      container_name: nginx
 #      restart: unless-stopped
 #      image: nginx:1.24
 #      ports:
@@ -139,7 +139,7 @@ services:
 #      depends_on:
 #        - app
 #      networks:
-#        - django_elk_network
+#        - c300_auth
 
 
 networks:

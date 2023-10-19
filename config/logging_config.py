@@ -14,8 +14,9 @@ LOGGING = {
         'base': {
             'format': (
                 '%(asctime)s | '
+                # '%(name)s - %(module)s | '
+                '%(name)s | '
                 '%(levelname)s | '
-                '%(name)s - %(module)s | '
                 '%(message)s'
             ),
         },
@@ -69,6 +70,11 @@ LOGGING = {
             'level': 'INFO',
         },
         'apps.authorization': {
+            'handlers': ['console'],
+            'propagate': False,
+            'level': 'DEBUG',
+        },
+        'faust_app': {
             'handlers': ['console'],
             'propagate': False,
             'level': 'DEBUG',
