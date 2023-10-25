@@ -2,18 +2,17 @@
 
 **на этапе разработки**
 
-[a07b09f](https://github.com/kosumosuSpb/c300_jwt_auth/commit/a07b09f9b5c6cbb1394a342b6f6d6d1447b71fba) - последний коммит с токенами не через куки
+**a07b09f** - последний коммит с токенами не через куки
 
 Основан на: 
-* Python 3.11.5
+* Python 3.11.6
 * Django 4.2
 * DRF 3.14.0
 * Simple JWT 5.3.0
 * PyJWT 2.8.0
 * Faust-streaming 0.10.14
 * zookeeper + kafka в докере 
-* kafka-python 2.0.2
-* PostgreSQL (https://hub.docker.com/_/postgres)
+* PostgreSQL 16 (https://hub.docker.com/_/postgres)
 * celery 5.3.1
 * redis
 
@@ -154,6 +153,18 @@
     curl --location --request POST 'http://localhost:8000/api/v1/test/' \
     --header 'X-CSRFToken: NfOYKJzqt3OeEnDrkn2BEcqa0BNdjJqh' \
     --header 'Cookie: access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkxMTUxMjQ2LCJpYXQiOjE2OTExNTA2NDIsImp0aSI6IjM2MzEwZDQwMzlmNjRiNzRhYTU0YTc2YWNlZThhOGNhIiwidXNlcl9pZCI6MX0.kwoF9xPf2xAf0EFL5Mp0oIE_XmZCY3yzMkdvNfUj4xU; csrftoken=NfOYKJzqt3OeEnDrkn2BEcqa0BNdjJqh; refresh_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MTIzNzA0MiwiaWF0IjoxNjkxMTUwNjQyLCJqdGkiOiJhMGFlY2YwOGZjOTQ0NjIwODA2Y2ZkOTM4MDZjY2NhMyIsInVzZXJfaWQiOjF9.l27n3wc3QHSx6Vrgvn7jBeqvxUFp7Qsx_kzPXN03zpY'
+
+### Верификация токена через эндпоинт
+
+По задумке верификация токена должна происходить через запросы через кафку. 
+Однако этот метод я тоже включил для универсальности сервиса 
+(возможно, упростит разработку, но при масштабировании от него нужно уходить)
+
+    curl --location 'http://localhost:8000/auth/api/v1/auth/verify/' \
+    --form 'token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk4MjMyODIyLCJpYXQiOjE2OTgyMzIyMjIsImp0aSI6ImY4OTNhOTUyZTM3MzRkNGM4MGUxOWFlZTkzODRkMTIyIiwidXNlcl9pZCI6MX0._quYmLUGkQwgtTKU7YqJcbVLX8bUNMse-gulY_zsnIA"'
+
+В случае проверки токена таким способом ответ будет тем, что и при запросе через кафку, 
+за исключением того, что не будет включать в себя id поле 
 
 ### Выход:
 
