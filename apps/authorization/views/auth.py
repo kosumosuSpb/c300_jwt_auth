@@ -1,8 +1,10 @@
 """
 Login, Logout, TokenRefresh
 """
+import datetime
 import logging
 
+import jwt
 from django.conf import settings
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -12,8 +14,10 @@ from rest_framework.request import Request
 from rest_framework import status
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
-    TokenRefreshView
+    TokenRefreshView,
+    TokenVerifyView
 )
+from rest_framework_simplejwt.exceptions import TokenError
 
 from apps.authorization.services.secure import (
     set_access_to_cookie,
@@ -144,6 +148,67 @@ class TokenRefreshCookieView(TokenRefreshView):
         response.data.update(data)
 
         return response
+
+
+class TokenVerifyAuthView(TokenVerifyView):
+    """Верифицирует токен и возвращает пользователя"""
+
+    @swagger_auto_schema(
+        operation_summary='Token verification',
+        tags=['auth'],
+        responses={
+            status.HTTP_200_OK: openapi.Response(
+                description='Token verification success',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='Invalid access token',
+            ),
+            status.HTTP_400_BAD_REQUEST: openapi.Response(
+                description='No valid token found in cookie "access_token"',
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
+                description='Server error',
+            )
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        logger.debug('TokenVerifyAuthView - POST - request data: %s', request.data)
+
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            logger.error('Ошибка валидации токена: %s', e)
+            # raise InvalidToken(e.args[0])
+            return Response(data='Invalid token', status=status.HTTP_401_UNAUTHORIZED)
+
+        # token = serializer.validated_data.get('token')
+        token = request.data.get('token')
+        logger.debug('serializer.validated_data: %s', serializer.validated_data)
+        if not token:
+            logger.error('Токен не найден!')
+            # raise InvalidToken('Нет токена в запросе')
+            return Response(data='Token cannot be blank', status=status.HTTP_400_BAD_REQUEST)
+
+        algorythm = settings.SIMPLE_JWT.get('ALGORITHM')
+        secret_key = settings.SIMPLE_JWT.get('SIGNING_KEY')
+        payload: dict = jwt.decode(token, secret_key, algorithms=[algorythm, ])
+        logger.debug('PAYLOAD: %s', payload)
+
+        date_exp = payload.get('exp')
+        if not date_exp:
+            logger.error('Не верный формат пейлоада: нет даты истечения токена!')
+            return Response(
+                data='Invalid payload format: there are no token expired date!',
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        logger.debug(
+            'Дата истечения токена: %s',
+            datetime.datetime.fromtimestamp(date_exp)
+                     )
+
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

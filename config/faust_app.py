@@ -106,10 +106,10 @@ async def auth_requests_agent(stream: faust.streams.Stream[AuthRequest]):
         await response_topic.send(key=value.id, value=msg_record)
 
 
-@app.agent(response_topic)
-async def auth_response_agent(stream):
-    """Принимает стрим из фауст+кафка из топика response_topic"""
-    logger.info('auth_response_agent started')
-    async for value in stream:
-        logger.debug('AGENT RESPONSE | Value in faust stream: %s', value)
-        logger.debug('AGENT RESPONSE | Value as dict: %s', value.asdict())
+# @app.agent(response_topic)
+# async def auth_response_agent(stream):
+#     """Принимает стрим из фауст+кафка из топика response_topic"""
+#     logger.info('auth_response_agent started')
+#     async for value in stream:
+#         logger.debug('AGENT RESPONSE | Value in faust stream: %s', value)
+#         logger.debug('AGENT RESPONSE | Value as dict: %s', value.asdict())
