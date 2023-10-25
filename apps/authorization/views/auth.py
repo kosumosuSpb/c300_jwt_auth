@@ -25,6 +25,7 @@ from apps.authorization.services.secure import (
     set_csrf,
     del_auth_cookies,
 )
+from apps.authorization.services.user_service import UserService
 
 
 logger = logging.getLogger(__name__)
@@ -159,12 +160,32 @@ class TokenVerifyAuthView(TokenVerifyView):
         responses={
             status.HTTP_200_OK: openapi.Response(
                 description='Token verification success',
+                examples={
+                    'application/json': {
+                        "status": "OK",
+                        "user_id": 1,
+                        "permissions": {
+                            "is_superuser": False,
+                            "is_staff": False,
+                            "is_active": True,
+                            "is_admin": False,
+                            "is_deleted": False
+                        }
+                    }
+                }
             ),
             status.HTTP_401_UNAUTHORIZED: openapi.Response(
                 description='Invalid access token',
+                examples={
+                    'application/json': {
+                        "status": "FAIL",
+                        "user_id": '',
+                        "permissions": ''
+                    }
+                }
             ),
             status.HTTP_400_BAD_REQUEST: openapi.Response(
-                description='No valid token found in cookie "access_token"',
+                description='No token found in request',
             ),
             status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
                 description='Server error',
@@ -197,18 +218,37 @@ class TokenVerifyAuthView(TokenVerifyView):
         logger.debug('PAYLOAD: %s', payload)
 
         date_exp = payload.get('exp')
+        user_id = payload.get('user_id')
+
         if not date_exp:
             logger.error('Не верный формат пейлоада: нет даты истечения токена!')
             return Response(
                 data='Invalid payload format: there are no token expired date!',
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        if not user_id:
+            logger.error('Не верный формат пейлоада: нет user_id!')
+            return Response(
+                data='Invalid payload format: there are no user id!',
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
         logger.debug(
-            'Дата истечения токена: %s',
-            datetime.datetime.fromtimestamp(date_exp)
+            'Пользователь: %s, дата истечения токена: %s',
+            user_id, datetime.datetime.fromtimestamp(date_exp)
                      )
 
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        user_service: UserService = UserService(user_id)
+        permissions = user_service.get_permissions()
+
+        answer = {
+            'status': 'OK',
+            'user_id': user_id,
+            'permissions': permissions,
+        }
+
+        return Response(answer, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
