@@ -9,6 +9,7 @@ from apps.authorization.models import (
     WorkerProfile,
     TenantProfile,
     Department,
+    CustomPermissionModel
 )
 
 
@@ -79,3 +80,21 @@ class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = '__all__'
+
+
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomPermissionModel
+        fields = '__all__'
+
+
+class PermissionCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    description = serializers.CharField(max_length=255, required=False)
+
+
+class PermissionEditSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    new_name = serializers.CharField(max_length=100, required=False)
+    description = serializers.CharField(max_length=255, required=False)
+    new_description = serializers.CharField(max_length=255, required=False)

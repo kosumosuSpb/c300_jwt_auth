@@ -15,4 +15,4 @@ from .houses import (
 )
 from .area import Area
 from .owner_area import OwnerArea
-from .permissions_models import CustomPermissionModel, PermissionGroup
+from .permissions import CustomPermissionModel, PermissionGroup

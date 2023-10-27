@@ -29,6 +29,9 @@ class BaseTestCase(APITestCase):
         cls.test_url = base_api_url + 'account/test/'
         cls.activation_url = base_api_url + 'account/activate/'
         cls.reg_url = base_api_url + 'account/register/'
+        cls.perm_list_url = base_api_url + 'permissions/list/'
+        cls.perm_detail_url = base_api_url + 'permissions/detail/'
+
         # ACC VARIABLES
         cls.email = 'base@email.one'
         cls.password = 'somePassWord1'

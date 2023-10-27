@@ -32,6 +32,7 @@ urlpatterns = [
     path(API_BASE_URL + 'auth/', include('apps.authorization.urls.auth')),
     path(API_BASE_URL + 'account/', include('apps.authorization.urls.account')),
     path(API_BASE_URL + 'company/', include('apps.authorization.urls.company')),
+    path(API_BASE_URL + 'permissions/', include('apps.authorization.urls.permissions')),
 ]
 
 if DEBUG:

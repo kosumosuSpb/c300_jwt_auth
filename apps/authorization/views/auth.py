@@ -192,8 +192,11 @@ class TokenVerifyAuthView(TokenVerifyView):
             )
         }
     )
-    def post(self, request, *args, **kwargs):
-        logger.debug('TokenVerifyAuthView - POST - request data: %s', request.data)
+    def post(self, request: Request, *args, **kwargs):
+        logger.debug('TokenVerifyAuthView - POST | request data: %s', request.data)
+        token_from_cookies = request.COOKIES.get('access_token')
+        logger.debug('TokenVerifyAuthView - POST | наличие токена в куках: %s',
+                     token_from_cookies)
 
         serializer = self.get_serializer(data=request.data)
 
@@ -211,6 +214,9 @@ class TokenVerifyAuthView(TokenVerifyView):
             logger.error('Токен не найден!')
             # raise InvalidToken('Нет токена в запросе')
             return Response(data='Token cannot be blank', status=status.HTTP_400_BAD_REQUEST)
+
+        logger.debug('Одинаковы ли токены в куках и в теле запроса: %s',
+                     token == token_from_cookies)
 
         algorythm = settings.SIMPLE_JWT.get('ALGORITHM')
         secret_key = settings.SIMPLE_JWT.get('SIGNING_KEY')
@@ -235,7 +241,7 @@ class TokenVerifyAuthView(TokenVerifyView):
             )
 
         logger.debug(
-            'Пользователь: %s, дата истечения токена: %s',
+            'id пользователя: %s, дата истечения токена: %s',
             user_id, datetime.datetime.fromtimestamp(date_exp)
                      )
 

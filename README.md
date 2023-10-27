@@ -163,8 +163,8 @@
     curl --location 'http://localhost:8000/auth/api/v1/auth/verify/' \
     --form 'token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk4MjMyODIyLCJpYXQiOjE2OTgyMzIyMjIsImp0aSI6ImY4OTNhOTUyZTM3MzRkNGM4MGUxOWFlZTkzODRkMTIyIiwidXNlcl9pZCI6MX0._quYmLUGkQwgtTKU7YqJcbVLX8bUNMse-gulY_zsnIA"'
 
-В случае проверки токена таким способом ответ будет тем, что и при запросе через кафку, 
-за исключением того, что не будет включать в себя id поле 
+В случае проверки токена таким способом ответ будет тем же, что и при запросе через кафку, 
+за исключением того, что не будет включать в себя поле **id**.
 
 ### Выход:
 
@@ -227,6 +227,12 @@
         'user_id': '',
         'permissions': '',
     }
+
+# Тесты
+
+Тесты запускаются командой
+
+    python manage.py test
    
 # TODO
 

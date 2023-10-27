@@ -66,7 +66,8 @@ class CustomPermissionModel(models.Model):
         Args:
             name: Имя права
             desc_start: Начало строки описания - по-умолчанию "Can",
-                например: "Can read something"
+                например: "Can read something". Здесь read подставляется автоматически,
+                а something - это поле name.
 
         Returns:
             list, Список созданных прав
