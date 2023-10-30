@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from apps.authorization.services.base_service import BaseService
 from apps.authorization.models import (
     CompanyProfile,
-    CustomPermissionModel,
+    PermissionModel,
     UserProfile,
     UserData,
     TenantProfile,
@@ -217,9 +217,9 @@ class UserService(BaseService):
 
         self.user.profile.permissions.add(*new_perms)
 
-    def add_permission(self, perm: CustomPermissionModel):
+    def add_permission(self, perm: PermissionModel):
         """Добавление одного права пользователю"""
-        assert isinstance(perm, CustomPermissionModel), 'perm должен быть объектом CustomPermissionModel!'
+        assert isinstance(perm, PermissionModel), 'perm должен быть объектом PermissionModel!'
         self.add_permissions((perm, ))
 
     def get_parent_perms(self):

@@ -7,6 +7,7 @@ from apps.authorization.views.permissions import (
 
 
 urlpatterns = [
-    path('list/', PermissionListView.as_view(), name='permission_list'),
-    path('detail/', PermissionDetailView.as_view(), name='permission_detail'),
+    path('', PermissionListView.as_view(), name='permission_list'),
+    path('create/', PermissionListView.as_view(), name='permission_create'),
+    path('<str:name>/', PermissionDetailView.as_view(), name='permission_detail'),
 ]
