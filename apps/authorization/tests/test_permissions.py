@@ -13,7 +13,7 @@ from apps.authorization.models.permissions import PermissionModel
 logger = logging.getLogger(__name__)
 
 
-class TestPermissionsCreate(BaseTestCase):
+class TestPermissions(BaseTestCase):
     """Тесты создания CRUD-прав через представления"""
     def setUp(self) -> None:
         logger.debug('setUp | Создание объекта UserData')
@@ -53,7 +53,7 @@ class TestPermissionsCreate(BaseTestCase):
         data = {'name': permission_name}
 
         response: Response = self.client.post(
-            self.perm_create,
+            self.perms_url,
             data=data,
             content_type="application/json"
         )
