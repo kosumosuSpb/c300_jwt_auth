@@ -55,7 +55,7 @@ class UserService(BaseService):
 
     def get_permissions(self) -> dict:
         """Возвращает права пользователя. Демонстрационно: в реальности пока бесполезно"""
-        permissions = {f'{perm.name} {perm.type}': True for perm in self.user.all_permissions}
+        permissions = {f'{perm.name} {perm.action}': True for perm in self.user.all_permissions}
 
         django_permissions_set = self.user.get_user_permissions()
         django_permissions = {perm: self.user.has_perm(perm) for perm in django_permissions_set}

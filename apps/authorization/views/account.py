@@ -89,7 +89,7 @@ class UserDeleteView(APIView):
     @swagger_auto_schema(
         tags=['account'],
     )
-    def post(self, request: Request, *args, **kwargs):
+    def delete(self, request: Request, *args, **kwargs):
         logger.debug('UserDeleteView | POST')
         logger.debug('Удаление пользователя %s', request.user)
         eternal_delete = request.query_params.get('eternal')

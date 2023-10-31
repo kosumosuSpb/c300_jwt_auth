@@ -16,7 +16,7 @@ class PermissionModel(models.Model):
     """Базовая модель прав"""
     class Meta:
         db_table = "authorization_permissions"
-        unique_together = ['type', 'name']
+        unique_together = ['action', 'name']
 
     CREATE = 'CREATE'
     READ = 'READ'
@@ -24,14 +24,14 @@ class PermissionModel(models.Model):
     DELETE = 'DELETE'
     ACTIONS = [CREATE, READ, UPDATE, DELETE]
 
-    TYPE_CHOICES = (
+    ACTION_CHOICES = (
         ('create', CREATE),
         ('read', READ),
         ('update', UPDATE),
         ('delete', DELETE)
     )
 
-    type = models.CharField(max_length=6, choices=TYPE_CHOICES)  # noqa A003
+    action = models.CharField(max_length=6, choices=ACTION_CHOICES)  # noqa A003
     name = models.CharField(max_length=150)
     description = models.CharField(max_length=255, blank=True, null=True)
     workers = models.ManyToManyField(
@@ -57,10 +57,10 @@ class PermissionModel(models.Model):
         self.description = value
 
     def __str__(self):
-        return f'<Perm | {self.name} | {self.type}>'
+        return f'<Perm | {self.name} | {self.action}>'
 
     def __repr__(self):
-        return f'<Perm | {self.name} | {self.type}>'
+        return f'<Perm | {self.name} | {self.action}>'
 
 
 class PermissionGroup(models.Model):

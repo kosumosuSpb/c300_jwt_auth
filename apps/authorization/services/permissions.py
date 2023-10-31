@@ -31,9 +31,9 @@ class PermissionService(BaseService):
         for action in PermissionModel.ACTIONS:
             # logger.debug('Создание права для %s %s', action, name)
             action = action.lower()
-            desc = f'{description} {action} {name}'
+            description = f'{description} {action} {name}'
             # logger.debug('name: %s, action: %s, desc: %s', name, action, desc)
-            perm = PermissionModel.objects.create(name=name, type=action, desc=desc)
+            perm = PermissionModel.objects.create(name=name, action=action, description=description)
             crud_perms.append(perm)
 
         logger.debug('Созданы права: %s', crud_perms)
@@ -61,7 +61,7 @@ class PermissionService(BaseService):
         action = action.lower()
         desc = f'{desc_start} {action} {name}'
         # logger.debug('name: %s, action: %s, desc: %s', name, action, desc)
-        perm = PermissionModel.objects.create(name=name, type=action, desc=desc)
+        perm = PermissionModel.objects.create(name=name, action=action, desc=desc)
 
         logger.debug('Создано право: %s', perm)
         return perm

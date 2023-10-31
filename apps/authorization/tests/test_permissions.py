@@ -1,5 +1,6 @@
 import logging
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from django.test import Client
 from rest_framework.response import Response
@@ -60,6 +61,35 @@ class TestPermissions(BaseTestCase):
 
         return response
 
+    def create_one_permission(self, name: str | None = None, action: str | None = None) -> Response:
+        """
+        Делает логин под суперюзером (который указан в setUp),
+        создаёт CRUD-право (одно)
+
+        Returns:
+            Response
+        """
+        login_response = self._login()
+        # logger.debug('create_permission | login response: %s', response)
+        logger.debug('create_permission | login response.content: %s',
+                     login_response.content)
+
+        permission_name = name or self.permission_name
+        action = action or 'create'
+
+        data = {
+            'name': permission_name,
+            'action': action,
+        }
+
+        response: Response = self.client.post(
+            self.perms_one_url,
+            data=data,
+            content_type="application/json"
+        )
+
+        return response
+
     def test_create_permission(self):
         response = self.create_permission()
         logger.debug('test_create_permission | response: %s', response)
@@ -73,12 +103,32 @@ class TestPermissions(BaseTestCase):
 
         self.assertEqual(len(created_permissions), 4)
 
-        actions = [perm.type for perm in created_permissions]
+        actions = [perm.action for perm in created_permissions]
         self.assertEqual(len(actions), 4)
 
         crud_types = {action.lower() for action in PermissionModel.ACTIONS}
         crud_intersection = crud_types.intersection(actions)
         self.assertEqual(len(crud_intersection), 4)
+
+    def test_create_one_permission(self):
+        action = 'create'
+        response = self.create_one_permission(action=action)
+        logger.debug('test_create_one_permission | response: %s', response)
+        logger.debug('test_create_one_permission | status_code: %s, response.content: %s',
+                     response.status_code, response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        try:
+            created_permission: PermissionModel = PermissionModel.objects.get(name=self.permission_name)
+            logger.debug('test_create_one_permission | Созданное CRUD-право в БД: %s',
+                         created_permission)
+        except ObjectDoesNotExist as dne:
+            logger.error('test_create_one_permission | право не найдено: %s', dne)
+            raise AssertionError(f'Ошибка при поиске созданного права: {dne}')
+
+        self.assertEqual(created_permission.action, action)
+        self.assertEqual(created_permission.name, self.permission_name)
 
     def test_list_permission(self):
         response = self.create_permission()

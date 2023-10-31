@@ -262,7 +262,7 @@ class TestAccount(BaseTestCase):
         refresh_token = tokens.get(self.refresh_token_name)
 
         cookies = {self.refresh_token_name: refresh_token}
-        response = self.client.post(self.refresh_url, cookies=cookies)
+        response = self.client.delete(self.refresh_url, cookies=cookies)
 
         outstanding_qs = OutstandingToken.objects.filter(token=refresh_token)
         self.assertTrue(outstanding_qs.exists(), 'Рефреш токена в БД нет!')
