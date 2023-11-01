@@ -252,6 +252,7 @@ class UserService(BaseService):
         logger.debug('mark_as_deleted user: %s', self.user)
         self.user.is_deleted = True
         self.user.is_active = False
+        self.user.save()
 
     def delete_user(self, user: UserData | None = None):
         """Удаление текущего пользователя"""
@@ -338,7 +339,7 @@ class UserService(BaseService):
         except ObjectDoesNotExist as dne:
             msg = f'Пользователь с id {user_id} не найден: {dne}'
             logger.error(msg)
-            raise KeyError(msg)
+            raise ObjectDoesNotExist(msg)
 
         return user_data
 
@@ -355,7 +356,7 @@ class UserService(BaseService):
         except ObjectDoesNotExist as dne:
             msg = f'Пользователь с id {email} не найден: {dne}'
             logger.error(msg)
-            raise KeyError(msg)
+            raise ObjectDoesNotExist(msg)
 
         return user_data
 

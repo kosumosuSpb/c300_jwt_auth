@@ -22,6 +22,7 @@ automation_sims
 import sys
 
 from apps.authorization.models.permissions import PermissionModel
+from apps.authorization.services.permissions import PermissionService
 
 
 def main(filename: str):
@@ -49,7 +50,7 @@ def make_permissions(permission_names_list: list[str]) -> list[PermissionModel]:
         if not perm_name:
             continue
 
-        perms_items = PermissionModel.create_permissions(perm_name)
+        perms_items = PermissionService.create_permissions(perm_name)
         perms.extend(perms_items)
 
     print('Создание CRUD-прав в БД завершено')

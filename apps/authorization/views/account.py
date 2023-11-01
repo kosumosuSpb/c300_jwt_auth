@@ -85,20 +85,34 @@ class RegisterView(APIView):
 
 class UserDeleteView(APIView):
     """Удаление пользователя"""
+    permission_classes = (IsSuperuser, IsAdminUser)
 
     @swagger_auto_schema(
         tags=['account'],
     )
-    def delete(self, request: Request, *args, **kwargs):
-        logger.debug('UserDeleteView | POST')
-        logger.debug('Удаление пользователя %s', request.user)
-        eternal_delete = request.query_params.get('eternal')
+    def delete(self, request: Request, user_id: int, *args, **kwargs):
+        logger.debug('UserDeleteView | DELETE')
 
-        user_service = UserService(request.user)
-        if eternal_delete:
-            user_service.delete_user()
-        else:
-            user_service.mark_as_deleted()
+        logger.debug('UserDeleteView | DELETE | request.data: %s', request.data)
+        logger.debug('UserDeleteView | DELETE | пришёл user_id: %s', user_id)
+
+        user_service = UserService(user_id)
+        user_service.delete_user()
+
+        return Response(data={'status': 'OK'}, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=['account'],
+    )
+    def patch(self, request: Request, user_id: int, *args, **kwargs):
+        """Помечает пользователя как удалённого, но не удаляет его"""
+        logger.debug('UserDeleteView | PATCH')
+
+        logger.debug('UserDeleteView | PATCH | request.data: %s', request.data)
+        logger.debug('UserDeleteView | PATCH | пришёл user_id: %s', user_id)
+
+        user_service = UserService(user_id)
+        user_service.mark_as_deleted()
 
         return Response(data={'status': 'OK'}, status=status.HTTP_200_OK)
 
@@ -115,7 +129,7 @@ class PasswordChangeView(APIView):
 
 class ManualActivateAccountView(APIView):
     """Ручная активация аккаунта"""
-    permission_classes = [IsAdminUser, IsSuperuser]
+    permission_classes = (IsAdminUser, IsSuperuser)
 
     @swagger_auto_schema(
         tags=['account'],

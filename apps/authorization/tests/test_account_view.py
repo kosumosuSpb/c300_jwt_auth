@@ -1,8 +1,10 @@
 import logging
 from unittest.mock import patch
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import override_settings
 from rest_framework.response import Response
+from rest_framework import status
 
 from apps.authorization.models import UserData
 from apps.authorization.tests.base_testcase import BaseTestCase
@@ -96,3 +98,43 @@ class TestAccountViews(BaseTestCase):
         user.refresh_from_db()
         self.assertTrue(user.is_active)
         self.assertIsNone(user.activation_code)
+
+    def test_delete_user(self):
+        """Тест удаления юзера"""
+        logger.debug('test_delete_user')
+        user = UserData.objects.get(email=self.email)
+        user.is_superuser = True
+        user.save()
+
+        user_worker = self._create_worker()
+
+        self._login()
+
+        response = self.client.delete(self.delete_user_url + str(user_worker.pk) + '/')
+
+        logger.debug('test_delete_user | response.content: %s', response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        with self.assertRaises(ObjectDoesNotExist):
+            UserData.objects.get(pk=user_worker.pk)
+
+    def test_mark_as_deleted_user(self):
+        """Тест удаления юзера"""
+        logger.debug('test_mark_as_deleted_user')
+        user = UserData.objects.get(email=self.email)
+        user.is_superuser = True
+        user.save()
+
+        user_worker = self._create_worker()
+
+        self._login()
+
+        response = self.client.patch(self.delete_user_url + str(user_worker.pk) + '/')
+
+        logger.debug('test_mark_as_deleted_user | response.content: %s', response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user_worker.refresh_from_db()
+        self.assertTrue(user_worker.is_deleted)
+        self.assertFalse(user_worker.is_active)

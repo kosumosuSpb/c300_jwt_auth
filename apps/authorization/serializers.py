@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from apps.authorization.models import (
     UserData,
@@ -45,18 +46,24 @@ class UserRegistrationSerializer(serializers.Serializer):
         logger.debug('validate_profile | Profile data: %s', profile)
 
         user_type = profile.get('type')
-        if user_type == settings.ORG:
-            profile_serializer = CompanyProfileSerializer(data=profile)
-        elif user_type == settings.WORKER:
-            profile_serializer = WorkerProfileSerializer(data=profile)
-        elif user_type == settings.TENANT:
-            profile_serializer = TenantProfileSerializer(data=profile)
-        else:
-            msg = 'Передан не верный тип профиля пользователя (в "profiles")!'
-            logger.error(msg)
-            raise serializers.ValidationError(detail=msg)
 
-        profile_serializer.is_valid(raise_exception=True)
+        match user_type:
+            case settings.ORG:
+                profile_serializer = CompanyProfileSerializer(data=profile)
+            case settings.WORKER:
+                profile_serializer = WorkerProfileSerializer(data=profile)
+            case settings.TENANT:
+                profile_serializer = TenantProfileSerializer(data=profile)
+            case _:
+                msg = 'Передан не верный тип профиля пользователя (в "profiles")!'
+                logger.error(msg)
+                raise serializers.ValidationError(detail=msg)
+
+        try:
+            profile_serializer.is_valid(raise_exception=True)
+        except ValidationError as ve:
+            logger.error('Ошибка валидации профиля %s', ve)
+            raise
 
         logger.debug('validate_profile | Profile validated data: %s',
                      profile_serializer.validated_data)

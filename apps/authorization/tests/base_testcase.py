@@ -26,6 +26,7 @@ class BaseTestCase(APITestCase):
         cls.login_url = base_api_url + 'auth/login/'
         cls.refresh_url = base_api_url + 'auth/refresh/'
         cls.logout_url = base_api_url + 'auth/logout/'
+        cls.delete_user_url = base_api_url + 'account/delete/'
         cls.test_url = base_api_url + 'account/test/'
         cls.activation_url = base_api_url + 'account/activate/'
         cls.reg_url = base_api_url + 'account/register/'
@@ -191,6 +192,7 @@ class BaseTestCase(APITestCase):
             password: str | None = None,
             profile: dict | None = None
     ) -> UserData:
+        """Создание пользователя с профилем компании"""
         user_company = UserService.create_user(
             email=email or self.email_org1,
             password=password or self.password_org1,
@@ -199,6 +201,7 @@ class BaseTestCase(APITestCase):
         return user_company
 
     def _create_department(self, company: CompanyProfile) -> Department:
+        """Создание отдела"""
         dep = Department.objects.create(company=company, name=self.department_name1)
         self.assertIsInstance(dep, Department)
         return dep
@@ -211,6 +214,7 @@ class BaseTestCase(APITestCase):
             profile: dict | None = None,
             sex='male'
     ) -> UserData:
+        """Создание пользователя с профилем сотрудника/работника"""
         if sex == 'male':
             user_worker = UserService.create_user(
                 email=email or self.email_worker,
@@ -235,6 +239,7 @@ class BaseTestCase(APITestCase):
             password: str | None = None,
             profile: dict | None = None,
     ) -> UserData:
+        """Создание пользователя с профилем жителя"""
         user_tenant = UserService.create_user(
             email=email or self.email_tenant,
             password=password or self.password_tenant,
