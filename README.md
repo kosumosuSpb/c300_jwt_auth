@@ -72,9 +72,9 @@
 
 После запуска проекта будет доступна документация по API по адресу: `localhost:8000/swagger/`
 
-## Для разработки
+# Для разработки
 
-### Poetry, пре-коммиты и flake8
+## Poetry, пре-коммиты и flake8
 
 Нужно использовать **flake8** и **пре-коммиты**. После скачивания проекта в его корне будут лежать файлы 
 `pyproject.toml`, `.flake8` и `.pre-commit-config.yaml`. 
@@ -102,13 +102,28 @@
 
     poetry export --without-hashes -f requirements.txt -o requirements.txt
 
-### Файлы docker-compose
+Для локальных тестов в `settings.py` и `faust_app.py` добавлял такое: 
+
+    from dotenv import load_dotenv, find_dotenv
+
+    # .ENV
+    found_dotenv = find_dotenv('.dev.env')
+    load_dotenv(found_dotenv)
+
+В `.dev.env` вставляется то же самое, что и в обычный `.env`, но с поправкой на реальный источник, например:
+
+    CELERY_BROKER_URL=redis://localhost:6379/0
+    CELERY_RESULT_BACKEND=redis://localhost:6379/0
+    
+    KAFKA_URL=kafka://localhost:9094
+
+## Файлы docker-compose
 
 Для прода используется `docker-compose.prod.yml` (пока не настроен правильно), 
 а для разработки - `docker-compose.yml` (он использует `runserver` и там настроены `volumes` так, 
 чтобы приложение запускалось не из контейнера, а из папки с проектом).
 
-## Отправка тестовых данных
+# Отправка тестовых данных
 
 Чтобы получить токены доступа и обновления, нужно создать пользователя. 
 Можно создать суперпользователя, и авторизоваться через него, в ответ получить два токена: 

@@ -111,6 +111,9 @@ class PermissionListView(APIView):
             logger.error('Ошибка валидации при создании CRUD-права: %s', ve)
             return Response(data='Data validation error', status=status.HTTP_400_BAD_REQUEST)
 
+        logger.debug('PermissionListView - POST | serializer.validated_data: %s',
+                     serializer.validated_data)
+
         perms = PermissionService.create_permissions(**serializer.validated_data)
         logger.debug('PermissionListView - POST | созданные CRUD-права: %s', perms)
         return Response(status=status.HTTP_201_CREATED)
