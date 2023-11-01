@@ -92,8 +92,7 @@ class TestAccountViews(BaseTestCase):
 
         response = self.client.get(self.activation_url, params)
 
-        expected_code = 202
-        self.assertEqual(response.status_code, expected_code)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
         user.refresh_from_db()
         self.assertTrue(user.is_active)
@@ -119,7 +118,7 @@ class TestAccountViews(BaseTestCase):
             UserData.objects.get(pk=user_worker.pk)
 
     def test_mark_as_deleted_user(self):
-        """Тест удаления юзера"""
+        """Тест пометки юзера, как удалённого"""
         logger.debug('test_mark_as_deleted_user')
         user = UserData.objects.get(email=self.email)
         user.is_superuser = True

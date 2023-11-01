@@ -85,10 +85,35 @@ class RegisterView(APIView):
 
 class UserDeleteView(APIView):
     """Удаление пользователя"""
-    permission_classes = (IsSuperuser, IsAdminUser)
+    permission_classes = [IsSuperuser | IsAdminUser]
 
     @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name='X-CSRFToken',
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                description='CSRF token',
+                required=True,
+            ),
+        ],
+        operation_summary='User delete',
         tags=['account'],
+        responses={
+            status.HTTP_204_NO_CONTENT: openapi.Response(
+                description='No Content',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='Authentication credentials were not provided',
+            ),
+            status.HTTP_403_FORBIDDEN: openapi.Response(
+                description='CSRF Failed: CSRF token missing, '
+                            'CSRF Failed: CSRF token from the "X-Csrftoken" HTTP header incorrect',
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
+                description='Internal server error',
+            )
+        }
     )
     def delete(self, request: Request, user_id: int, *args, **kwargs):
         logger.debug('UserDeleteView | DELETE')
@@ -102,7 +127,32 @@ class UserDeleteView(APIView):
         return Response(data={'status': 'OK'}, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name='X-CSRFToken',
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                description='CSRF token',
+                required=True,
+            ),
+        ],
+        operation_summary='User mark as deleted',
         tags=['account'],
+        responses={
+            status.HTTP_200_OK: openapi.Response(
+                description='No Content',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='Authentication credentials were not provided',
+            ),
+            status.HTTP_403_FORBIDDEN: openapi.Response(
+                description='CSRF Failed: CSRF token missing, '
+                            'CSRF Failed: CSRF token from the "X-Csrftoken" HTTP header incorrect',
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
+                description='Internal server error',
+            )
+        }
     )
     def patch(self, request: Request, user_id: int, *args, **kwargs):
         """Помечает пользователя как удалённого, но не удаляет его"""
@@ -129,7 +179,7 @@ class PasswordChangeView(APIView):
 
 class ManualActivateAccountView(APIView):
     """Ручная активация аккаунта"""
-    permission_classes = (IsAdminUser, IsSuperuser)
+    permission_classes = [IsSuperuser | IsAdminUser]
 
     @swagger_auto_schema(
         tags=['account'],

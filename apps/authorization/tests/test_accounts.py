@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.query import QuerySet
 from django.test import tag, override_settings
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework import status
 
 from apps.authorization.models import (
     CompanyProfile,
@@ -43,6 +44,7 @@ class TestAccount(BaseTestCase):
         self.assertIn(self.csrf_token_name, response.cookies)  # опционально, для теста не обязательно
 
     def test_logout(self):
+        """Тест выхода пользователя"""
         logger.debug('test_logout')
         response = self._login()
         self.assertEquals(200, response.status_code)
@@ -59,12 +61,7 @@ class TestAccount(BaseTestCase):
         }
         response = self.client.post(self.logout_url, cookies=cookies, headers=headers)
 
-        expected_data = {
-            "action": "LOGOUT",
-            "status": "OK"
-        }
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(expected_data, response.json())
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # logger.debug('response.cookies: %s', response.cookies)
         # logger.debug('response.headers: %s', response.headers)

@@ -289,7 +289,7 @@ class LogoutView(APIView):
         logger.debug('Logout')
         response = Response(
             data={'action': 'LOGOUT', 'status': 'OK'},
-            status=status.HTTP_200_OK
+            status=status.HTTP_204_NO_CONTENT
         )
         response = del_auth_cookies(response)
         # response.cookies.clear()
