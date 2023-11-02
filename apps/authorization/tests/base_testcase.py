@@ -143,7 +143,7 @@ class BaseTestCase(APITestCase):
         return response
 
     @staticmethod
-    def _get_value_from_morsel_cookie(cookie: Morsel):
+    def _get_value_from_morsel_cookie(cookie: Morsel) -> str | None:
         """
         Извлечение значения из типа http.cookies.Morsel,
         который используется в тестовом клиенте
@@ -153,7 +153,12 @@ class BaseTestCase(APITestCase):
 
         Returns: str
         """
-        assert isinstance(cookie, Morsel), 'Пришёл не верный класс, должен быть Morsel'
+        if cookie is None:
+            logger.warning('_get_value_from_morsel_cookie | пришёл None! Возвращаю None...')
+            return None
+
+        assert isinstance(cookie, Morsel), \
+            f'Пришёл не верный класс, должен быть Morsel, а на самом деле - {type(cookie)}'
         assert hasattr(cookie, '_value'), 'У объекта нет поля _value!'
         return cookie._value
 

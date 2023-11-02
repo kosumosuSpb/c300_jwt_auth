@@ -85,8 +85,6 @@ def del_auth_cookies(response: Response, delete_csrf=True) -> Response:
             path='/'
         )
 
-    # TODO: нужно добавлять токены в блок
-
     return response
 
 

@@ -18,6 +18,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView
 )
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.authorization.services.secure import (
     set_access_to_cookie,
@@ -286,7 +287,14 @@ class LogoutView(APIView):
         }
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
-        logger.debug('Logout')
+        logger.debug('LogoutView - POST')
+
+        # access_token = request.COOKIES.get(ACCESS_TOKEN)
+        refresh_token = request.COOKIES.get(REFRESH_TOKEN)
+
+        refresh = RefreshToken(refresh_token)
+        refresh.blacklist()
+
         response = Response(
             data={'action': 'LOGOUT', 'status': 'OK'},
             status=status.HTTP_204_NO_CONTENT

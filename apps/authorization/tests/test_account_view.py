@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import override_settings
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
 
 from apps.authorization.models import UserData
 from apps.authorization.tests.base_testcase import BaseTestCase
@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class TestAccountViews(BaseTestCase):
+    """Тесты аккаунта: регистрация, активация, удаление пользователя"""
+
     def _create_worker_over_view(self) -> Response:
         """Создание воркера через представление"""
         data = {
@@ -46,10 +48,9 @@ class TestAccountViews(BaseTestCase):
     def test_registration_with_activation(self, *args, **kwargs):
         response = self._create_worker_over_view()
 
-        expected_code = 201
         jsn = response.json()
 
-        self.assertEqual(response.status_code, expected_code)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('email', jsn)
         self.assertIn('profile', jsn)
         self.assertNotIn('password', jsn)
@@ -64,10 +65,9 @@ class TestAccountViews(BaseTestCase):
     def test_registration_without_activation(self, *args, **kwargs):
         response = self._create_worker_over_view()
 
-        expected_code = 201
-        jsn = response.json()
+        jsn: dict = response.json()
 
-        self.assertEqual(response.status_code, expected_code)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('email', jsn)
         self.assertIn('profile', jsn)
         self.assertNotIn('password', jsn)
