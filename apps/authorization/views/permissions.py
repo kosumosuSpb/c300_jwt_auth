@@ -333,3 +333,10 @@ class CreatePermissions(APIView):
     def post(self, request: Request, *args, **kwargs):
         """Создаёт много CRUD-прав по списку имён"""
         logger.debug('CreatePermissions - POST | request.data: %s', request.data)
+
+
+# TODO: дописать
+class PermissionGrantView(APIView):
+    """Выдача права пользователю"""
+    def post(self, request: Request, user_id: int):
+        """Выдача прав пользователю user_id"""

@@ -1,54 +1,14 @@
 version: '3.4'
 
 services:
-  zookeeper:
-    container_name: zookeeper
-    image: zookeeper:latest
-    restart: always
-    hostname: zoo
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-
-  kafka:
-    container_name: kafka
-    image: bitnami/kafka:latest
-    depends_on:
-      - zookeeper
-    ports:
-      - "9094:9094"
-    environment:
-#      - KAFKA_ADVERTISED_HOST_NAME=localhost
-      - KAFKA_ZOOKEEPER_CONNECT=zoo:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_ENABLE_KRAFT=no
-#      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:9094
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
-#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://:9094
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
-
-  postgres:
-    container_name: postgres
-    image: postgres:latest
-    restart: always
-    hostname: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./.db_temp:/var/lib/postgresql/data
-    environment:
-#      - POSTGRES_DB=
-#      - POSTGRES_USER=
-      - POSTGRES_PASSWORD=example
-
   redis:
     container_name: redis
     hostname: redis
     image: redis:latest
-    ports:
-      - "6379:6379"
+#    ports:
+#      - "6379:6379"
+    networks:
+      - c300_auth
 
   auth_service:
     container_name: auth_service
@@ -56,36 +16,83 @@ services:
       context: .
       dockerfile: Dockerfile
     image: auth_service
-    command: sh -c "python manage.py migrate && gunicorn --env DJANGO_SETTINGS_MODULE=config.settings config.wsgi -b :8000"
+#    command: sh -c "/wait && python manage.py makemigrations && python manage.py migrate && gunicorn --env DJANGO_SETTINGS_MODULE=config.settings config.wsgi -b :8000 --reload"
+    command: sh -c "/wait && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
+#      - ./logs:/app/logs
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      WAIT_HOSTS: postgres:5432
     depends_on:
       - postgres
+    networks:
+      - c300_auth
 
   celery:
     container_name: celery
     image: auth_service
-    command: celery -A config.celery_app worker --loglevel=info -s ./celery/celerybeat-schedule
+    command: sh -c "celery -A config.celery_app worker --loglevel=info"
     env_file:
       - .env
     volumes:
       - .:/app
     depends_on:
       - redis
-      - auth_service
+    networks:
+      - c300_auth
 
   celery-beat:
     container_name: celery-beat
     image: auth_service
-    command: celery -A config.celery_app beat --loglevel=info
+    command: sh -c "celery -A config.celery_app beat --loglevel=info -s ./service_data/celerybeat-schedule"
     env_file:
       - .env
     volumes:
       - .:/app
     depends_on:
       - redis
-      - auth_service
+    networks:
+      - c300_auth
+
+  faust:
+    container_name: faust
+    image: auth_service
+    command: sh -c "/wait && faust --datadir ./service_data/faust/ -A config.faust_app:app worker -l info --without-web"
+    env_file:
+      - .env
+    environment:
+      WAIT_HOSTS: postgres:5432, kafka:9092
+    volumes:
+      - .:/app
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - c300_auth
+
+#  nginx:
+#      container_name: nginx
+#      restart: unless-stopped
+#      image: nginx:1.24
+#      ports:
+#        - 80:80
+#      volumes:
+#        - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+#        - ./static:/app/static
+#      env_file:
+#        - .env
+#      links:
+#        - app
+#      depends_on:
+#        - app
+#      networks:
+#        - c300_auth
+
+
+networks:
+  c300_auth:
+    driver: bridge

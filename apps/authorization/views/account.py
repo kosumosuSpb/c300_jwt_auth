@@ -10,6 +10,7 @@
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -175,6 +176,37 @@ class PasswordChangeView(APIView):
     )
     def post(self, request: Request, *args, **kwargs):
         logger.debug('PasswordChangeView | POST')
+
+
+# TODO: дописать
+class UserProfileDetailView(APIView):
+    """Изменение профиля пользователя"""
+
+    def get(self, request: Request, user_id: int):
+        """Просмотр профиля пользователя"""
+        logger.debug('UserProfileDetailView - GET | request.data: %s', request.data)
+        logger.debug('UserProfileDetailView - GET | user_id: %s', user_id)
+
+        try:
+            user: UserData = UserData.objects.select_related(
+                'company_profile', 'worker_profile', 'tenant_profile'
+            ).get(pk=user_id)
+            logger.debug('UserProfileDetailView - GET | user_data: %s', user)
+            logger.debug('UserProfileDetailView - GET | user_data.profile: %s', user.profile)
+        except ObjectDoesNotExist as dne:
+            msg = f'Пользователь {user_id} не найден: {dne}'
+            logger.error(msg)
+            return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserRegistrationSerializer(user)
+
+        logger.debug('UserProfileDetailView - GET | serializer.data: %s', serializer.data)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request: Request, user_id: int, *args, **kwargs):
+        """Полное редактирование профиля пользователя"""
+        logger.debug('UserProfileDetailView - PUT | request.data: %s', request.data)
 
 
 class ManualActivateAccountView(APIView):
