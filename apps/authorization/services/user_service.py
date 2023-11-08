@@ -1,5 +1,6 @@
-import logging
 import datetime
+import logging
+from typing import Iterable
 
 import jwt
 from django.conf import settings
@@ -54,7 +55,7 @@ class UserService(BaseService):
         return user_data
 
     def get_permissions(self) -> dict:
-        """Возвращает права пользователя. Демонстрационно: в реальности пока бесполезно"""
+        """Возвращает права пользователя"""
         permissions = {f'{perm.name} {perm.action}': True for perm in self.user.all_permissions}
 
         django_permissions_set = self.user.get_user_permissions()
@@ -195,53 +196,6 @@ class UserService(BaseService):
     def update_email(self):
         """Обновление (изменение) адреса электронной почты"""
         pass
-
-    def add_permissions(self, perms: list | tuple | set):
-        """
-        Добавление списка прав профилю пользователя
-
-        Args:
-            perms: права CustomPermissions (список, кортеж или множество)
-        """
-        logger.debug('Добавление прав пользователю %s', self.user)
-        assert isinstance(perms, (list, tuple, set)), 'perms должен быть списком, кортежем или множеством!'
-
-        if self.user.type == settings.ORG:
-            new_perms = perms
-        else:
-            parent_perms = self.get_parent_perms()
-            new_perms = parent_perms.intersection(perms)
-            if new_perms != perms:
-                logger.warning('Пользователю %s добавлены только те права, которые есть у компании',
-                               self.user)
-
-        self.user.profile.permissions.add(*new_perms)
-
-    def add_permission(self, perm: PermissionModel):
-        """Добавление одного права пользователю"""
-        assert isinstance(perm, PermissionModel), 'perm должен быть объектом PermissionModel!'
-        self.add_permissions((perm, ))
-
-    def get_parent_perms(self):
-        """Получает разрешения родительских профилей"""
-        if self.user.type == settings.ORG:
-            return
-
-        permissions = self._get_parent_perms(self.user.pk, self.user.type)
-
-        return permissions
-
-    @staticmethod
-    def _get_parent_perms(user_id: int | str, user_type: str) -> QuerySet:
-        """Получает разрешения родительского профиля, в зависимости от типа профиля"""
-        assert isinstance(user_id, (str, int)), 'user_id должен быть str или int!'
-        assert user_type in (settings.WORKER, settings.TENANT, settings.ORG), 'Не верный user_type!'
-
-        user = UserData.objects.select_related(f'{user_type}__department__company').get(pk=user_id)
-        profile = getattr(user, user_type)
-        parent_perms = profile.department.company.permissions.all()
-
-        return parent_perms
 
     def validate_human_fields(self, profile: dict) -> bool:
         """Проверяет наличие необходимых ключей в словаре профиля"""
@@ -392,3 +346,91 @@ class UserService(BaseService):
         self.user.is_active = True
         self.user.get_access_date = datetime.datetime.now()
         self.user.save()
+
+    # PERMISSIONS
+
+    @staticmethod
+    def find_permissions(perms: Iterable[PermissionModel | str]) -> QuerySet:
+        """Возвращает QuerySet с правами"""
+
+        if not isinstance(perms, (list, set, tuple, QuerySet)):
+            logger.debug('find_permissions: создаём кортеж..')
+            perms = (perms, )
+
+        if isinstance(perms, set):
+            perms = tuple(perms)
+
+        if isinstance(perms[0], str):
+            permissions_models: QuerySet = PermissionModel.objects.filter(name__in=perms)
+        elif isinstance(perms[0], PermissionModel):
+            permissions_models = perms
+        else:
+            msg = (f'find_permissions: передан не верный тип элементов в списке прав: '
+                   f'допустим str или PermissionModel, а передан: {type(perms[0])}')
+            logger.error(msg)
+            raise TypeError(msg)
+
+        if not permissions_models:
+            msg = f'add_permissions: не найдено прав с такими именами: {perms}'
+            logger.error(msg)
+            raise ObjectDoesNotExist(msg)
+
+        return permissions_models
+
+    def add_permissions(self, perms: Iterable[PermissionModel | str]) -> QuerySet:
+        """
+        Добавление списка прав профилю пользователя
+
+        Args:
+            perms: права PermissionModel (список, кортеж, множество или QuerySet)
+        """
+        logger.debug('Добавление пользователю %s прав %s', self.user, perms)
+        permissions_models = self.find_permissions(perms)
+
+        if self.user.type == settings.ORG:
+            new_perms = permissions_models
+        else:
+            parent_perms = self.get_parent_perms()
+            new_perms = parent_perms.intersection(permissions_models)
+            if new_perms != perms:
+                logger.warning('Пользователю %s добавлены только те права, '
+                               'которые есть у компании: %s',
+                               self.user, new_perms)
+
+        self.user.profile.permissions.add(*new_perms)
+
+        return new_perms
+
+    def add_permission(self, perm: PermissionModel):
+        """Добавление одного права пользователю"""
+        assert isinstance(perm, PermissionModel), 'perm должен быть объектом PermissionModel!'
+        self.add_permissions((perm, ))
+
+    def delete_permissions(self, perms: Iterable[PermissionModel | str]):
+        """Удаление CRUD-прав по введённым именам прав, либо самим правам (PermissionModel)"""
+        logger.debug('Удаление прав %s пользователя %s', perms, self.user)
+
+        permissions_models = self.find_permissions(perms)
+        self.user.profile.permissions.remove(*permissions_models)
+
+    def get_parent_perms(self):
+        """Получает разрешения родительских профилей"""
+        if self.user.type == settings.ORG:
+            return
+
+        permissions = self._get_parent_perms(self.user.pk, self.user.type)
+
+        return permissions
+
+    @staticmethod
+    def _get_parent_perms(user_id: int | str, user_type: str) -> QuerySet:
+        """Получает разрешения родительского профиля, в зависимости от типа профиля"""
+        assert isinstance(user_id, (str, int)), 'user_id должен быть str или int!'
+        assert user_type in (settings.WORKER, settings.TENANT, settings.ORG), 'Не верный user_type!'
+
+        profile_name = user_type + '_profile'
+
+        user = UserData.objects.select_related(f'{profile_name}__department__company').get(pk=user_id)
+        parent_perms = user.profile.department.company.permissions.all()
+
+        return parent_perms

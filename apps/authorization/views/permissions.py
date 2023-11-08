@@ -3,6 +3,7 @@
 """
 import logging
 
+from django.core.exceptions import ObjectDoesNotExist
 # from django.conf import settings
 from django.db.models import QuerySet
 from django.http import Http404
@@ -16,6 +17,7 @@ from rest_framework.request import Request
 
 from apps.authorization.models.permissions import PermissionModel
 from apps.authorization.services.permissions import PermissionService
+from apps.authorization.services.user_service import UserService
 from apps.authorization.serializers import PermissionCreateSerializer, PermissionSerializer
 from apps.authorization.permissions import IsSuperuser
 
@@ -338,5 +340,75 @@ class CreatePermissions(APIView):
 # TODO: дописать
 class PermissionGrantView(APIView):
     """Выдача права пользователю"""
-    def post(self, request: Request, user_id: int):
+    permission_classes = (IsSuperuser, )
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name='X-CSRFToken',
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                description='CSRF token',
+                required=True,
+            ),
+        ],
+        operation_summary='Выдача CRUD-прав пользователю',
+        tags=['permissions'],
+        responses={
+            status.HTTP_200_OK: openapi.Response(
+                description='Права добавлены пользователю',
+            ),
+            status.HTTP_400_BAD_REQUEST: openapi.Response(
+                description='Ошибка в запросе',
+            ),
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description='Authentication credentials were not provided',
+            ),
+            status.HTTP_403_FORBIDDEN: openapi.Response(
+                description='CSRF Failed: CSRF token missing, '
+                            'CSRF Failed: CSRF token from the "X-Csrftoken" HTTP header incorrect',
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: openapi.Response(
+                description='Internal server error',
+            )
+        }
+    )
+    def patch(self, request: Request, user_id: int):
         """Выдача прав пользователю user_id"""
+        logger.debug('PermissionGrantView - PATCH | request.data: %s', request.data)
+        logger.debug('PermissionGrantView - PATCH | user_id: %s', user_id)
+
+        perms = request.data.get('permissions')
+        logger.debug('PermissionGrantView - PATCH | perms: %s', perms)
+
+        user_service = UserService(user_id)
+
+        try:
+            added_perms = user_service.add_permissions(perms)
+        except ObjectDoesNotExist as dne:
+            return Response(data=str(dne), status=status.HTTP_400_BAD_REQUEST)
+        except TypeError as te:
+            return Response(data=str(te), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        added_perms = list(added_perms)
+
+        return Response(
+            data=f'Права {added_perms} добавлены пользователю {user_id}',
+            status=status.HTTP_200_OK
+        )
+
+    def delete(self, request: Request, user_id: int):
+        """Удаление прав у пользователя"""
+        logger.debug('PermissionGrantView - DELETE | request.data: %s', request.data)
+        logger.debug('PermissionGrantView - DELETE | user_id: %s', user_id)
+
+        perms = request.data.get('permissions')
+        logger.debug('PermissionGrantView - DELETE | perms: %s', perms)
+
+        user_service = UserService(user_id)
+        user_service.delete_permissions(perms)
+
+        return Response(
+            data=f'Права {perms} удалены у пользователя {user_id}',
+            status=status.HTTP_200_OK
+        )

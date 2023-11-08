@@ -7,9 +7,11 @@ from django.test import Client
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
+from apps.authorization.models import PermissionModel
 from apps.authorization.models.user_data import UserData
 from apps.authorization.models.company_profile import CompanyProfile, Department
 from apps.authorization.services.user_service import UserService
+from apps.authorization.services.permissions import PermissionService
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,7 @@ class BaseTestCase(APITestCase):
         cls.reg_url = base_api_url + 'account/register/'
         cls.perms_url = base_api_url + 'permissions/'
         cls.perms_one_url = base_api_url + 'permissions/create_one/'
+        cls.perms_grant_url = base_api_url + 'permissions/grant/'
 
         # ACC VARIABLES
         cls.email = 'base@email.one'
@@ -91,6 +94,9 @@ class BaseTestCase(APITestCase):
         cls.refresh_token_name = settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH']
         cls.csrf_token_name = settings.CSRF_COOKIE_NAME
         cls.csrf_headers_name = settings.CSRF_HEADERS_NAME
+
+        # PERMISSION VARS
+        cls.permission_name = 'some_cool_action'
 
     def setUp(self) -> None:
         logger.debug('setUp | Создание объекта UserData')
@@ -251,3 +257,39 @@ class BaseTestCase(APITestCase):
             profile=profile or self.tenant_profile
         )
         return user_tenant
+
+    def _create_company_and_worker(self, as_tuple=False) -> dict[str, UserData | Department]:
+        """Создаёт компанию, отдел и сотрудника"""
+        company_user = self._create_company()
+        department = self._create_department(company_user.profile)
+        worker_user = self._create_worker()
+        department.workers.add(worker_user.worker_profile)
+
+        if as_tuple:
+            company = (company_user, department, worker_user)
+        else:
+            company = {
+                'company_user': company_user,
+                'department': department,
+                'worker_user': worker_user
+            }
+
+        return company
+
+    # PERMISSIONS
+
+    def _create_permission(self, name: str | None = None) -> list:
+        """Создание CRUD-прав (4 штук) через PermissionService. Возвращает list[PermissionModel]"""
+        name = name or self.permission_name
+        logger.debug('Создание права %s через сервис прав', name)
+        perms_models = PermissionService.create_permissions(name)
+        return perms_models
+
+    @staticmethod
+    def _create_permissions(names_list: list | tuple | set) -> list[PermissionModel]:
+        """Создание CRUD-прав (4 штук) через PermissionService. Возвращает list[PermissionModel]"""
+        logger.debug('Создание нескольких прав через сервис прав: %s', names_list)
+
+        perms_list = PermissionService.create_many_permissions(names_list)
+
+        return perms_list

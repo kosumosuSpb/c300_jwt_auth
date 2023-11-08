@@ -1,6 +1,6 @@
 import logging
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.test import override_settings
 
 from apps.authorization.models import (
@@ -10,6 +10,7 @@ from apps.authorization.models import (
     WorkerProfile,
     UserData,
 )
+from apps.authorization.models import PermissionModel
 from apps.authorization.services.secure import make_activation_code
 from apps.authorization.services.company_service import CompanyService
 from apps.authorization.services.user_service import UserService
@@ -93,3 +94,81 @@ class TestServices(BaseTestCase):
 
         self.assertTrue(user.is_active)
         self.assertIsNone(user.activation_code)
+
+    # PERMISSIONS
+
+    def test_create_permissions_service(self):
+        """Тест создания прав через сервис"""
+        perms_names = ('some_permission1', 'some_permission2')
+        perms_created = self._create_permissions(perms_names)
+
+        self.assertTrue(isinstance(perms_created, list))
+        self.assertEqual(len(perms_created), 8)
+
+        perms_models_types = list({type(perm) for perm in perms_created})
+        perms_models_type = perms_models_types[0]
+
+        self.assertIs(perms_models_type, PermissionModel)
+
+        names_created = {perm.name for perm in perms_created}
+        intersection = names_created.intersection(perms_names)
+        self.assertTrue(len(intersection), 2)
+
+    def test_find_permissions_as_str_service(self):
+        """Тест метода find_permissions класса UserService путём передачи методу строки"""
+        self._create_permission()
+        found_perms = UserService.find_permissions(self.permission_name)
+
+        self.assertEqual(found_perms.count(), 4)
+
+    def test_find_permissions_as_list_service(self):
+        """Тест метода find_permissions класса UserService путём передачи методу списка"""
+        perms_names = ('some_permission1', 'some_permission2')
+        self._create_permissions(perms_names)
+
+        found_perms = UserService.find_permissions(list(perms_names))
+
+        self.assertEqual(found_perms.count(), 8)
+
+    def test_find_permissions_as_tuple_service(self):
+        """Тест метода find_permissions класса UserService путём передачи методу кортежа"""
+        perms_names = ('some_permission1', 'some_permission2')
+        self._create_permissions(perms_names)
+
+        found_perms = UserService.find_permissions(perms_names)
+        self.assertEqual(found_perms.count(), 8)
+
+    def test_find_permissions_as_set_service(self):
+        """Тест метода find_permissions класса UserService путём передачи методу множества"""
+        perms_names = ('some_permission1', 'some_permission2')
+        self._create_permissions(perms_names)
+
+        found_perms = UserService.find_permissions(set(perms_names))
+
+        self.assertEqual(found_perms.count(), 8)
+
+    def test_find_permissions_as_queryset_service(self):
+        """Тест метода find_permissions класса UserService через передачу методу QuerySet"""
+        perms_names = ('some_permission1', 'some_permission2')
+        perm_models = self._create_permissions(perms_names)
+        perms_names_str_list = {perm.name for perm in perm_models}
+
+        logger.debug('test_find_permissions_as_queryset_service | perms_names_str_list: %s',
+                     perms_names_str_list)
+
+        perm_models_qs = PermissionModel.objects.filter(name__in=perms_names_str_list)
+
+        logger.debug('test_find_permissions_as_queryset_service | perm_models_qs: %s',
+                     perm_models_qs)
+
+        found_perms = UserService.find_permissions(perm_models_qs)
+
+        self.assertEqual(found_perms.count(), 8)
+
+    def test_find_permissions_wrong_names_service(self):
+        """Тест метода find_permissions класса UserService путём передачи методу не верной строки"""
+        perms_names = ('some_permission1', 'some_permission2')
+        self._create_permissions(perms_names)
+
+        with self.assertRaises(ObjectDoesNotExist):
+            UserService.find_permissions('some_permission3')

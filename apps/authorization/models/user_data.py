@@ -126,6 +126,10 @@ class UserData(AbstractUser):
 
     @property
     def all_permissions(self):
+        """
+        Возвращает список CRUD-прав (PermissionModel),
+        связанных с профилем этого пользователя
+        """
         return list(self.profile.permissions.all())
 
     def get_full_name(self) -> str:
@@ -148,7 +152,7 @@ class UserData(AbstractUser):
         else:
             msg = 'Не привязан ни один профиль!'
             logger.error(msg)
-            raise TypeError(msg)
+            raise AttributeError(msg)
         return profile
 
     def __str__(self):

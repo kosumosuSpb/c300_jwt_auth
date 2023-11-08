@@ -19,7 +19,7 @@ class PermissionService(BaseService):
 
         Args:
             name: Имя права
-            desc_start: Начало строки описания - по-умолчанию "Can",
+            description: Начало строки описания - по-умолчанию "Can",
                 например: "Can read something". Здесь read подставляется автоматически,
                 а something - это поле name.
 
@@ -33,11 +33,26 @@ class PermissionService(BaseService):
             action = action.lower()
             perm_description = f'{description} {action} {name}'
             # logger.debug('name: %s, action: %s, desc: %s', name, action, desc)
-            perm = PermissionModel.objects.create(name=name, action=action, description=perm_description)
+            perm, _ = PermissionModel.objects.get_or_create(name=name, action=action, description=perm_description)
             crud_perms.append(perm)
 
         logger.debug('Созданы права: %s', crud_perms)
         return crud_perms
+
+    @classmethod
+    def create_many_permissions(cls, names_list: list[str]) -> list[PermissionModel]:
+        """Создание множества прав из списка имён. Описание будет применено по-умолчанию"""
+        logger.debug('Создание нескольких CRUD-прав: %s', names_list)
+        assert isinstance(names_list, (list, set, tuple)), \
+            f'names_list должен быть списком, множеством или кортежем! Пришло: {type(names_list)}'
+
+        perms_list = []
+
+        for name in names_list:
+            perms = cls.create_permissions(name)
+            perms_list.extend(perms)
+
+        return perms_list
 
     @staticmethod
     def create_one_permission(name: str, action: str, desc_start='Can') -> PermissionModel:

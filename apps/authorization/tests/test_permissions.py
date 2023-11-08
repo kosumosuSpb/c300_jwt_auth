@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.authorization.models import UserData
+from apps.authorization.services.user_service import UserService
 from apps.authorization.tests.base_testcase import BaseTestCase
 from apps.authorization.models.permissions import PermissionModel
 
@@ -24,7 +25,6 @@ class TestPermissions(BaseTestCase):
             is_superuser=True
         )
         self.client = Client()
-        self.permission_name = 'some_cool_action'
 
     # def tearDown(self) -> None:
     #     logger.debug('tearDown | Удаление тестового пользователя UserData')
@@ -39,7 +39,7 @@ class TestPermissions(BaseTestCase):
     def create_permission(self, name: str | None = None) -> Response:
         """
         Делает логин под суперюзером (который указан в setUp),
-        создаёт CRUD-права
+        создаёт CRUD-права через представление
 
         Returns:
             Response
@@ -221,3 +221,229 @@ class TestPermissions(BaseTestCase):
         self.assertEqual(len(old_perms), 0)
 
         self.assertEqual(new_description, perms[0].description)
+
+    def test_add_permission_to_company_as_list(self):
+        """Добавление прав компании. Право передаётся списком"""
+        self._login()
+
+        company_user = self._create_company()
+        self.create_permission()
+
+        data = {
+            'permissions': [self.permission_name, ],
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(company_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        company_user.refresh_from_db()
+        all_perms = company_user.all_permissions
+        actual_perms = [perm for perm in all_perms if perm.name == self.permission_name]
+
+        self.assertEqual(len(actual_perms), 4)
+
+    def test_add_permissions_to_company(self):
+        """Добавление нескольких прав компании. Права передаются списком или кортежем"""
+        perms_names = ('some_permission1', 'some_permission2')
+
+        self._create_permissions(perms_names)
+
+        self._login()
+        company_user = self._create_company()
+
+        data = {
+            'permissions': perms_names,
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(company_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        company_user.refresh_from_db()
+        all_perms = company_user.all_permissions
+        actual_perms = [perm for perm in all_perms if perm.name in perms_names]
+
+        self.assertEqual(len(actual_perms), 8)
+
+    def test_add_permission_to_company_as_str(self):
+        """Добавление прав компании. Право передаётся одной строкой"""
+        self._login()
+
+        company_user = self._create_company()
+        self.create_permission()
+
+        data = {
+            'permissions': self.permission_name,
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(company_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        company_user.refresh_from_db()
+        all_perms = company_user.all_permissions
+        actual_perms = [perm for perm in all_perms if perm.name == self.permission_name]
+
+        self.assertEqual(len(actual_perms), 4)
+
+    def test_add_wrong_permission(self):
+        """Добавление прав компании. Право передаётся одной строкой"""
+        self._login()
+
+        company_user = self._create_company()
+        self.create_permission()
+
+        data = {
+            'permissions': 'wrong_permission',
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(company_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_add_equal_permissions_to_company_and_to_worker(self):
+        """Добавление одних и тех же прав компании и сотруднику"""
+        company_user, department, worker_user = self._create_company_and_worker(as_tuple=True)
+
+        # logger.debug('worker department: %s', worker_user.worker_profile.department)
+
+        perms_names = ('some_permission1', 'some_permission2')
+        self._create_permissions(perms_names)
+
+        company_user_service = UserService(company_user)
+        company_user_service.add_permissions(perms_names)
+
+        self._login()
+
+        data = {
+            'permissions': perms_names,
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(worker_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        worker_user.refresh_from_db()
+        all_perms = worker_user.all_permissions
+        actual_perms = [perm for perm in all_perms if perm.name in perms_names]
+
+        self.assertEqual(len(actual_perms), 8)
+
+    def test_add_different_permissions_to_company_and_to_worker(self):
+        """Добавление разных прав компании и сотруднику"""
+        company_user, department, worker_user = self._create_company_and_worker(as_tuple=True)
+
+        # logger.debug('worker department: %s', worker_user.worker_profile.department)
+
+        perms_names1 = ('some_permission1', 'some_permission2')
+        perms_names2 = ('some_permission3', 'some_permission4')
+        self._create_permissions(perms_names1 + perms_names2)
+
+        company_user_service = UserService(company_user)
+        company_user_service.add_permissions(perms_names1)
+
+        self._login()
+
+        data = {
+            'permissions': perms_names2,
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(worker_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        worker_user.refresh_from_db()
+        all_perms = worker_user.all_permissions
+        actual_perms = [perm for perm in all_perms if perm.name in perms_names2]
+
+        self.assertEqual(len(actual_perms), 0)
+
+    def test_add_intersection_permissions_to_company_and_to_worker(self):
+        """
+        Добавление прав компании и сотруднику. Часть выдаваемых прав компании и сотруднику - общие
+        """
+        company_user, department, worker_user = self._create_company_and_worker(as_tuple=True)
+
+        # logger.debug('worker department: %s', worker_user.worker_profile.department)
+
+        perms_names1 = ('some_permission1', 'some_permission2')
+        perms_names2 = ('some_permission2', 'some_permission3')
+        self._create_permissions(perms_names1 + perms_names2)
+
+        company_user_service = UserService(company_user)
+        company_user_service.add_permissions(perms_names1)
+
+        self._login()
+
+        data = {
+            'permissions': perms_names2,
+        }
+
+        response = self.client.patch(
+            self.perms_grant_url + str(worker_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        worker_user.refresh_from_db()
+        all_perms = worker_user.all_permissions
+        actual_perms = [perm for perm in all_perms if perm.name in perms_names2]
+
+        self.assertEqual(len(actual_perms), 4)
+
+    def test_user_delete_permissions(self):
+        """Удаление прав у пользователя"""
+        company_user = self._create_company()
+        perms_names = ('some_permission1', 'some_permission2')
+        perm_models = self._create_permissions(perms_names)
+
+        company_user_service = UserService(company_user)
+        company_user_service.add_permissions(perm_models)
+
+        data = {
+            'permissions': perms_names[0],
+        }
+
+        self._login()
+        response = self.client.delete(
+            self.perms_grant_url + str(company_user.pk) + '/',
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        company_user.refresh_from_db()
+        all_perms = company_user.all_permissions
+
+        actual_perms = [perm for perm in all_perms if perm.name in perms_names]
+
+        self.assertEqual(len(actual_perms), 4)
+        self.assertEqual(actual_perms[0].name, perms_names[1])
