@@ -7,7 +7,6 @@ from django.test import Client
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
-from apps.authorization.models import PermissionModel
 from apps.authorization.models.user_data import UserData
 from apps.authorization.models.company_profile import CompanyProfile, Department
 from apps.authorization.services.user_service import UserService
@@ -284,12 +283,3 @@ class BaseTestCase(APITestCase):
         logger.debug('Создание права %s через сервис прав', name)
         perms_models = PermissionService.create_permissions(name)
         return perms_models
-
-    @staticmethod
-    def _create_permissions(names_list: list | tuple | set) -> list[PermissionModel]:
-        """Создание CRUD-прав (4 штук) через PermissionService. Возвращает list[PermissionModel]"""
-        logger.debug('Создание нескольких прав через сервис прав: %s', names_list)
-
-        perms_list = PermissionService.create_many_permissions(names_list)
-
-        return perms_list

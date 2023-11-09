@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.authorization.models import (
     UserData,
+    UserProfile,
     CompanyProfile,
     WorkerProfile,
     TenantProfile,
@@ -15,6 +16,23 @@ from apps.authorization.models import (
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_profile_serializer(profile_type: str):
+    """По введённому типу профиля возвращает его сериалайзер"""
+    match profile_type:
+        case settings.ORG:
+            profile_serializer = CompanyProfileSerializer
+        case settings.WORKER:
+            profile_serializer = WorkerProfileSerializer
+        case settings.TENANT:
+            profile_serializer = TenantProfileSerializer
+        case _:
+            msg = 'Передан не верный тип профиля пользователя (в "profiles")!'
+            logger.error(msg)
+            raise serializers.ValidationError(detail=msg)
+
+    return profile_serializer
 
 
 class CompanyProfileSerializer(serializers.ModelSerializer):
@@ -36,7 +54,7 @@ class TenantProfileSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.Serializer):
-    """Валидация данных пользователя при регистрации"""
+    """Валидация данных пользователя при регистрации и выводе данных о пользователе"""
     email = serializers.EmailField(max_length=100)
     password = serializers.CharField(max_length=128, write_only=True)
     profile = serializers.JSONField()
@@ -47,17 +65,8 @@ class UserRegistrationSerializer(serializers.Serializer):
 
         user_type = profile.get('type')
 
-        match user_type:
-            case settings.ORG:
-                profile_serializer = CompanyProfileSerializer(data=profile)
-            case settings.WORKER:
-                profile_serializer = WorkerProfileSerializer(data=profile)
-            case settings.TENANT:
-                profile_serializer = TenantProfileSerializer(data=profile)
-            case _:
-                msg = 'Передан не верный тип профиля пользователя (в "profiles")!'
-                logger.error(msg)
-                raise serializers.ValidationError(detail=msg)
+        profile_serializer_class = get_profile_serializer(user_type)
+        profile_serializer = profile_serializer_class(data=profile)
 
         try:
             profile_serializer.is_valid(raise_exception=True)
@@ -71,12 +80,47 @@ class UserRegistrationSerializer(serializers.Serializer):
         return profile
 
 
+class ProfileField(serializers.RelatedField):
+    """Описание валидации поля профиля"""
+    queryset = UserData.objects.all()
+
+    def to_representation(self, profile: UserProfile):
+        logger.debug('ProfileField | to_representation | value: %s', profile)
+
+        user_type = profile.type
+
+        profile_serializer_class = get_profile_serializer(user_type)
+        profile_serializer = profile_serializer_class(profile)
+
+        return profile_serializer.data
+
+    def to_internal_value(self, profile: dict):
+        logger.debug('ProfileField | to_internal_value | data: %s', profile)
+
+        user_type = profile.get('type')
+
+        profile_serializer_class = get_profile_serializer(user_type)
+        profile_serializer = profile_serializer_class(data=profile)
+
+        try:
+            profile_serializer.is_valid(raise_exception=True)
+        except ValidationError as ve:
+            logger.error('Ошибка валидации профиля %s', ve)
+            raise
+
+        logger.debug('ProfileField | to_internal_value | validated data: %s',
+                     profile_serializer.validated_data)
+
+        return profile
+
+
 class UserEditSerializer(serializers.ModelSerializer):
-    """Сериалайзер для валидации данных при изменении данных о пользователе"""
+    """Сериалайзер для валидации информации о пользователе при редактировании"""
+    profile = ProfileField()
 
     class Meta:
         model = UserData
-        exclude = ['user_permissions', 'groups', 'is_active']
+        exclude = ['user_permissions', 'groups', 'password']
         extra_kwargs = {
             'password': {'write_only': True},
             'activation_code': {'write_only': True},

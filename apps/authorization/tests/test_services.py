@@ -14,6 +14,7 @@ from apps.authorization.models import PermissionModel
 from apps.authorization.services.secure import make_activation_code
 from apps.authorization.services.company_service import CompanyService
 from apps.authorization.services.user_service import UserService
+from apps.authorization.services.permissions import PermissionService
 from apps.authorization.tests.base_testcase import BaseTestCase
 
 
@@ -100,7 +101,7 @@ class TestServices(BaseTestCase):
     def test_create_permissions_service(self):
         """Тест создания прав через сервис"""
         perms_names = ('some_permission1', 'some_permission2')
-        perms_created = self._create_permissions(perms_names)
+        perms_created = PermissionService.create_many_permissions(perms_names)
 
         self.assertTrue(isinstance(perms_created, list))
         self.assertEqual(len(perms_created), 8)
@@ -124,7 +125,7 @@ class TestServices(BaseTestCase):
     def test_find_permissions_as_list_service(self):
         """Тест метода find_permissions класса UserService путём передачи методу списка"""
         perms_names = ('some_permission1', 'some_permission2')
-        self._create_permissions(perms_names)
+        PermissionService.create_many_permissions(perms_names)
 
         found_perms = UserService.find_permissions(list(perms_names))
 
@@ -133,7 +134,7 @@ class TestServices(BaseTestCase):
     def test_find_permissions_as_tuple_service(self):
         """Тест метода find_permissions класса UserService путём передачи методу кортежа"""
         perms_names = ('some_permission1', 'some_permission2')
-        self._create_permissions(perms_names)
+        PermissionService.create_many_permissions(perms_names)
 
         found_perms = UserService.find_permissions(perms_names)
         self.assertEqual(found_perms.count(), 8)
@@ -141,7 +142,7 @@ class TestServices(BaseTestCase):
     def test_find_permissions_as_set_service(self):
         """Тест метода find_permissions класса UserService путём передачи методу множества"""
         perms_names = ('some_permission1', 'some_permission2')
-        self._create_permissions(perms_names)
+        PermissionService.create_many_permissions(perms_names)
 
         found_perms = UserService.find_permissions(set(perms_names))
 
@@ -150,7 +151,7 @@ class TestServices(BaseTestCase):
     def test_find_permissions_as_queryset_service(self):
         """Тест метода find_permissions класса UserService через передачу методу QuerySet"""
         perms_names = ('some_permission1', 'some_permission2')
-        perm_models = self._create_permissions(perms_names)
+        perm_models = PermissionService.create_many_permissions(perms_names)
         perms_names_str_list = {perm.name for perm in perm_models}
 
         logger.debug('test_find_permissions_as_queryset_service | perms_names_str_list: %s',
@@ -168,7 +169,7 @@ class TestServices(BaseTestCase):
     def test_find_permissions_wrong_names_service(self):
         """Тест метода find_permissions класса UserService путём передачи методу не верной строки"""
         perms_names = ('some_permission1', 'some_permission2')
-        self._create_permissions(perms_names)
+        PermissionService.create_many_permissions(perms_names)
 
         with self.assertRaises(ObjectDoesNotExist):
             UserService.find_permissions('some_permission3')

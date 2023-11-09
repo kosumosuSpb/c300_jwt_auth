@@ -8,6 +8,7 @@ from rest_framework import status
 
 from apps.authorization.models import UserData
 from apps.authorization.services.user_service import UserService
+from apps.authorization.services.permissions import PermissionService
 from apps.authorization.tests.base_testcase import BaseTestCase
 from apps.authorization.models.permissions import PermissionModel
 
@@ -251,7 +252,7 @@ class TestPermissions(BaseTestCase):
         """Добавление нескольких прав компании. Права передаются списком или кортежем"""
         perms_names = ('some_permission1', 'some_permission2')
 
-        self._create_permissions(perms_names)
+        PermissionService.create_many_permissions(perms_names)
 
         self._login()
         company_user = self._create_company()
@@ -325,7 +326,7 @@ class TestPermissions(BaseTestCase):
         # logger.debug('worker department: %s', worker_user.worker_profile.department)
 
         perms_names = ('some_permission1', 'some_permission2')
-        self._create_permissions(perms_names)
+        PermissionService.create_many_permissions(perms_names)
 
         company_user_service = UserService(company_user)
         company_user_service.add_permissions(perms_names)
@@ -358,7 +359,7 @@ class TestPermissions(BaseTestCase):
 
         perms_names1 = ('some_permission1', 'some_permission2')
         perms_names2 = ('some_permission3', 'some_permission4')
-        self._create_permissions(perms_names1 + perms_names2)
+        PermissionService.create_many_permissions(perms_names1 + perms_names2)
 
         company_user_service = UserService(company_user)
         company_user_service.add_permissions(perms_names1)
@@ -393,7 +394,7 @@ class TestPermissions(BaseTestCase):
 
         perms_names1 = ('some_permission1', 'some_permission2')
         perms_names2 = ('some_permission2', 'some_permission3')
-        self._create_permissions(perms_names1 + perms_names2)
+        PermissionService.create_many_permissions(perms_names1 + perms_names2)
 
         company_user_service = UserService(company_user)
         company_user_service.add_permissions(perms_names1)
@@ -422,7 +423,7 @@ class TestPermissions(BaseTestCase):
         """Удаление прав у пользователя"""
         company_user = self._create_company()
         perms_names = ('some_permission1', 'some_permission2')
-        perm_models = self._create_permissions(perms_names)
+        perm_models = PermissionService.create_many_permissions(perms_names)
 
         company_user_service = UserService(company_user)
         company_user_service.add_permissions(perm_models)

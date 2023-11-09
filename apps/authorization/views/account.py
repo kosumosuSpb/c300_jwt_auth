@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 
 from apps.authorization.models.user_data import UserData
-from apps.authorization.serializers import UserRegistrationSerializer
+from apps.authorization.serializers import UserRegistrationSerializer, UserEditSerializer
 from apps.authorization.services.user_service import (
     UserService,
     ActivationError
@@ -198,7 +198,7 @@ class UserProfileDetailView(APIView):
             logger.error(msg)
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UserRegistrationSerializer(user)
+        serializer = UserEditSerializer(user)
 
         logger.debug('UserProfileDetailView - GET | serializer.data: %s', serializer.data)
 
