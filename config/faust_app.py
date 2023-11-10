@@ -64,7 +64,7 @@ async def auth_requests_agent(stream: faust.streams.Stream[AuthRequest]):
 
         if not value.token:
             logger.debug('AGENT REQUEST | Нет токена в ивенте')
-            return
+            continue
 
         value_dict = value.asdict()
 
