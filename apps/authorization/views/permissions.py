@@ -330,13 +330,6 @@ class PermissionDetailView(APIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class CreatePermissions(APIView):
-    """Создание списка из многих CRUD-прав"""
-    def post(self, request: Request, *args, **kwargs):
-        """Создаёт много CRUD-прав по списку имён"""
-        logger.debug('CreatePermissions - POST | request.data: %s', request.data)
-
-
 class PermissionGrantView(APIView):
     """Выдача права пользователю"""
     permission_classes = (IsSuperuser, )

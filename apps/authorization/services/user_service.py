@@ -439,6 +439,38 @@ class UserService(BaseService):
 
         return new_perms
 
+    def add_one_permission(self, perm: PermissionModel | str):
+        """
+        Добавление одного права профилю пользователя (только read, только create итд..)
+
+        Args:
+            perm: право PermissionModel (список, кортеж, множество или QuerySet)
+        """
+        logger.debug('Добавление пользователю %s права %s', self.user, perm)
+
+        if isinstance(perm, str):
+            permission_model: PermissionModel = PermissionModel.objects.get(name=perm)
+        elif isinstance(perm, PermissionModel):
+            permission_model = perm
+        else:
+            msg = (f'Передан не верный тип данных! '
+                   f'Ожидается str или PermissionModel, а пришёл: {type(perm)}')
+            logger.error(msg)
+            raise TypeError(msg)
+
+        if self.user.type == settings.ORG:
+            self.user.profile.permissions.add(permission_model)
+        else:
+            parent_perm = self.get_parent_perms()
+
+            if perm not in parent_perm:
+                msg = ('У компании пользователя нет такого права, '
+                       'поэтому невозможно его выдать пользователю')
+                logger.warning(msg)
+                return
+
+            self.user.profile.permissions.add(permission_model)
+
     def add_permission(self, perm: PermissionModel):
         """Добавление одного права пользователю"""
         assert isinstance(perm, PermissionModel), 'perm должен быть объектом PermissionModel!'
