@@ -148,16 +148,18 @@ class UserService(BaseService):
 
         """
         user_type = profile.get('type')
-        if user_type == settings.ORG:
-            profile = cls.create_profile_company(user, profile)
-        elif user_type == settings.TENANT:
-            profile = cls.create_profile_tenant(user, profile)
-        elif user_type == settings.WORKER:
-            profile = cls.create_profile_worker(user, profile)
-        else:
-            msg = 'Указан не верный тип профиля пользователя!'
-            logger.error(msg)
-            raise UserServiceException(msg)
+
+        match user_type:
+            case settings.ORG:
+                profile = cls.create_profile_company(user, profile)
+            case settings.TENANT:
+                profile = cls.create_profile_tenant(user, profile)
+            case settings.WORKER:
+                profile = cls.create_profile_worker(user, profile)
+            case _:
+                msg = 'Указан не верный тип профиля пользователя!'
+                logger.error(msg)
+                raise UserServiceException(msg)
 
         return profile
 
@@ -195,7 +197,43 @@ class UserService(BaseService):
 
     def update_email(self):
         """Обновление (изменение) адреса электронной почты"""
+        # TODO
         pass
+
+    def update_password(self):
+        """Обновление (изменение) пароля"""
+        # TODO
+        pass
+
+    def update_user(self, new_user_data: dict):
+        """
+        Полное обновление информации о пользователе и его профиля.
+
+        Не обновляет тип юзера, мыло, пароль, активационные коды
+
+        Предполагается, что данные сюда приходят уже после сериализации и валидации
+
+        Args:
+            new_user_data: словарь с новыми данными по юзеру
+
+        Returns:
+            None
+        """
+        logger.debug('UserService | update_user | new_user_data: %s', new_user_data)
+
+        new_profile: dict = new_user_data.pop('profile')
+        profile_id = self.user.profile.pk
+
+        user_qs: QuerySet = UserData.objects.filter(pk=self.user.pk)
+        user_updated_rows = user_qs.update(**new_user_data)
+        logger.debug('UserService | update_user | user_updated_rows count: %s',
+                     user_updated_rows)
+
+        profile_model: UserProfile = self.get_profile_model(self.user.type)
+        profile_qs: QuerySet = profile_model.objects.filter(pk=profile_id)
+        profile_updated_rows = profile_qs.update(**new_profile)
+        logger.debug('UserService | update_user | profile_updated_rows count: %s',
+                     profile_updated_rows)
 
     def validate_human_fields(self, profile: dict) -> bool:
         """Проверяет наличие необходимых ключей в словаре профиля"""

@@ -1,4 +1,5 @@
 import logging
+import json
 
 from django.conf import settings
 from rest_framework import serializers
@@ -85,9 +86,22 @@ class ProfileField(serializers.RelatedField):
     queryset = UserData.objects.all()
 
     def to_representation(self, profile: UserProfile):
-        logger.debug('ProfileField | to_representation | value: %s', profile)
+        logger.debug('ProfileField | to_representation | profile: %s', profile)
 
-        user_type = profile.type
+        if isinstance(profile, UserProfile):
+            user_type = profile.type
+        elif isinstance(profile, dict):
+            user_type = profile.get('type')
+        else:
+            msg = (f'ProfileField | to_representation | Пришёл не верный тип данных в профиль! '
+                   f'Ждали UserProfile или dict, а пришёл {type(profile)}')
+            logger.error(msg)
+            raise TypeError(msg)
+
+        if not user_type:
+            msg = 'Пришёл пустой профиль!'
+            logger.error(msg)
+            raise AttributeError(msg)
 
         profile_serializer_class = get_profile_serializer(user_type)
         profile_serializer = profile_serializer_class(profile)
@@ -95,7 +109,15 @@ class ProfileField(serializers.RelatedField):
         return profile_serializer.data
 
     def to_internal_value(self, profile: dict):
-        logger.debug('ProfileField | to_internal_value | data: %s', profile)
+        logger.debug('ProfileField | to_internal_value | profile: %s',
+                     profile)
+        logger.debug('ProfileField | to_internal_value | profile data type: %s',
+                     type(profile))
+
+        if isinstance(profile, str):
+            logger.debug('ProfileField | to_internal_value | '
+                         'в профиль пришла строка, конвертируем в словарь')
+            profile = json.loads(profile)
 
         user_type = profile.get('type')
 
@@ -108,15 +130,19 @@ class ProfileField(serializers.RelatedField):
             logger.error('Ошибка валидации профиля %s', ve)
             raise
 
+        profile_serializer.validated_data.pop('type')  # не позволяем изменять тип профиля
         logger.debug('ProfileField | to_internal_value | validated data: %s',
                      profile_serializer.validated_data)
 
-        return profile
+        return profile_serializer.validated_data
 
 
 class UserEditSerializer(serializers.ModelSerializer):
-    """Сериалайзер для валидации информации о пользователе при редактировании"""
+    """
+    Сериалайзер для валидации информации о пользователе при редактировании
+    """
     profile = ProfileField()
+    email = serializers.EmailField(max_length=100, required=False)
 
     class Meta:
         model = UserData
@@ -124,6 +150,22 @@ class UserEditSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},
             'activation_code': {'write_only': True},
+            'email': {'read_only': True}
+        }
+
+
+class UserEmailEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserData
+        fields = ['email', ]
+
+
+class UserPasswordEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserData
+        fields = ['password', ]
+        extra_kwargs = {
+            'password': {'write_only': True},
         }
 
 

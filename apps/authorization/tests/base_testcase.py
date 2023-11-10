@@ -28,6 +28,7 @@ class BaseTestCase(APITestCase):
         cls.refresh_url = base_api_url + 'auth/refresh/'
         cls.logout_url = base_api_url + 'auth/logout/'
         cls.delete_user_url = base_api_url + 'account/delete/'
+        cls.show_user_ulr = base_api_url + 'account/profile/'
         cls.test_url = base_api_url + 'account/test/'
         cls.activation_url = base_api_url + 'account/activate/'
         cls.reg_url = base_api_url + 'account/register/'

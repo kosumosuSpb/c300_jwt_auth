@@ -1,6 +1,7 @@
 import logging
 from unittest.mock import patch
 
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import override_settings
 from rest_framework import status
@@ -97,6 +98,134 @@ class TestAccountViews(BaseTestCase):
         user.refresh_from_db()
         self.assertTrue(user.is_active)
         self.assertIsNone(user.activation_code)
+
+    def test_show_user_worker(self):
+        """Краткий тест отображения информации о сотруднике"""
+        logger.debug('test_show_user')
+        user_worker = self._create_worker()
+        self._login()
+
+        response: Response = self.client.get(self.show_user_ulr + str(user_worker.pk) + '/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user_data: dict = response.json()
+        self.assertIsNotNone(user_data)
+        self.assertIsInstance(user_data, dict)
+        self.assertIn('email', user_data)
+        self.assertIn('profile', user_data)
+        user_fields = (
+            'is_superuser', 'is_staff', 'is_active', 'date_joined', 'phones',
+            'is_admin', 'number', 'avatar', 'inn', 'get_access_date', 'is_deleted'
+        )
+        all_contains = all([field in user_data for field in user_fields])
+        self.assertTrue(all_contains)
+
+        profile = user_data.get('profile')
+        self.assertIsNotNone(profile)
+        self.assertIsInstance(profile, dict)
+
+        profile_type = profile.get('type')
+        self.assertIsNotNone(profile_type)
+        self.assertEqual(profile_type, settings.WORKER)
+
+        fields = ('type', 'first_name', 'last_name', 'birth_date', 'sex')
+        all_contains = all([field in profile for field in fields])
+        self.assertTrue(all_contains)
+
+    def test_show_user_tenant(self):
+        """Краткий тест отображения информации о жителе"""
+        logger.debug('test_show_user')
+        user_tenant = self._create_tenant()
+        self._login()
+
+        response: Response = self.client.get(self.show_user_ulr + str(user_tenant.pk) + '/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user_data: dict = response.json()
+        self.assertIsNotNone(user_data)
+        self.assertIsInstance(user_data, dict)
+        self.assertIn('email', user_data)
+        self.assertIn('profile', user_data)
+        user_fields = (
+            'is_superuser', 'is_staff', 'is_active', 'date_joined', 'phones',
+            'is_admin', 'number', 'avatar', 'inn', 'get_access_date', 'is_deleted'
+        )
+        all_contains = all([field in user_data for field in user_fields])
+        self.assertTrue(all_contains)
+
+        profile = user_data.get('profile')
+        self.assertIsNotNone(profile)
+        self.assertIsInstance(profile, dict)
+
+        profile_type = profile.get('type')
+        self.assertIsNotNone(profile_type)
+        self.assertEqual(profile_type, settings.TENANT)
+
+        fields = ('type', 'first_name', 'last_name', 'birth_date', 'sex')
+        all_contains = all([field in profile for field in fields])
+        self.assertTrue(all_contains)
+
+    def test_show_user_company(self):
+        """Краткий тест отображения информации о жителе"""
+        logger.debug('test_show_user')
+        user_company = self._create_company()
+        self._login()
+
+        response: Response = self.client.get(self.show_user_ulr + str(user_company.pk) + '/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user_data: dict = response.json()
+        self.assertIsNotNone(user_data)
+        self.assertIsInstance(user_data, dict)
+        self.assertIn('email', user_data)
+        self.assertIn('profile', user_data)
+        user_fields = (
+            'is_superuser', 'is_staff', 'is_active', 'date_joined', 'phones',
+            'is_admin', 'number', 'avatar', 'inn', 'get_access_date', 'is_deleted'
+        )
+        all_contains = all([field in user_data for field in user_fields])
+        self.assertTrue(all_contains)
+
+        profile = user_data.get('profile')
+        self.assertIsNotNone(profile)
+        self.assertIsInstance(profile, dict)
+
+        profile_type = profile.get('type')
+        self.assertIsNotNone(profile_type)
+        self.assertEqual(profile_type, settings.ORG)
+
+        profile_fields = ('type', 'name', 'bank_details', 'address')
+        all_contains = all([field in profile for field in profile_fields])
+        self.assertTrue(all_contains)
+
+    def test_worker_profile_edit(self):
+        """Тест редактирования профиля пользователя-сотрудника"""
+        new_data = {
+            'profile': {
+                "type": "tenant",
+                "first_name": "Мария",
+                "last_name": "Иванова",
+                "birth_date": "2001-10-05T12:00:00+03:00",
+                "sex": "female"
+            }
+        }
+        user_worker = self._create_worker(sex='female')
+        old_last_name: str = user_worker.profile.last_name
+        new_last_name: str = new_data['profile']['last_name']
+
+        self._login()
+
+        response = self.client.put(
+            self.show_user_ulr + str(user_worker.pk) + '/',
+            data=new_data,
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user_worker.refresh_from_db()
+
+        self.assertNotEqual(user_worker.profile.last_name, old_last_name)
+        self.assertEqual(user_worker.profile.last_name, new_last_name)
 
     def test_delete_user(self):
         """Тест удаления юзера"""

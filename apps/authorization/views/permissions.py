@@ -337,7 +337,6 @@ class CreatePermissions(APIView):
         logger.debug('CreatePermissions - POST | request.data: %s', request.data)
 
 
-# TODO: дописать
 class PermissionGrantView(APIView):
     """Выдача права пользователю"""
     permission_classes = (IsSuperuser, )

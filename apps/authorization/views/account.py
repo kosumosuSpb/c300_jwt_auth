@@ -14,6 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -178,7 +179,6 @@ class PasswordChangeView(APIView):
         logger.debug('PasswordChangeView | POST')
 
 
-# TODO: дописать
 class UserProfileDetailView(APIView):
     """Изменение профиля пользователя"""
 
@@ -192,7 +192,8 @@ class UserProfileDetailView(APIView):
                 'company_profile', 'worker_profile', 'tenant_profile'
             ).get(pk=user_id)
             logger.debug('UserProfileDetailView - GET | user_data: %s', user)
-            logger.debug('UserProfileDetailView - GET | user_data.profile: %s', user.profile)
+            logger.debug('UserProfileDetailView - GET | user_data.profile: %s',
+                         user.profile)
         except ObjectDoesNotExist as dne:
             msg = f'Пользователь {user_id} не найден: {dne}'
             logger.error(msg)
@@ -207,6 +208,30 @@ class UserProfileDetailView(APIView):
     def put(self, request: Request, user_id: int, *args, **kwargs):
         """Полное редактирование профиля пользователя"""
         logger.debug('UserProfileDetailView - PUT | request.data: %s', request.data)
+        logger.debug('UserProfileDetailView - PUT | user_id: %s', user_id)
+
+        serializer = UserEditSerializer(data=request.data)
+
+        try:
+            user_service = UserService(user_id)
+        except ObjectDoesNotExist as dne:
+            msg = f'Пользователь с user_id {user_id} не найден: {dne}'
+            logger.error(msg)
+            return Response(data=msg, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as ve:
+            logger.error('UserProfileDetailView - PUT | '
+                         'Ошибка валидации данных пользователя %s', ve)
+            raise
+
+        logger.debug('UserProfileDetailView - PUT | serializer.validated_data: %s',
+                     serializer.validated_data)
+
+        user_service.update_user(serializer.validated_data)
+
+        return Response(status=status.HTTP_200_OK)
 
 
 class ManualActivateAccountView(APIView):

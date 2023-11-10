@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 
 if TYPE_CHECKING:
-    from apps.authorization.models import CompanyProfile, HumanBaseProfile
+    from apps.authorization.models import CompanyProfile, HumanBaseProfile  # noqa: F401
 
 
 logger = logging.getLogger(__name__)
@@ -141,8 +141,13 @@ class UserData(AbstractUser):
         return name
 
     @property
-    def profile(self) -> 'CompanyProfile' or 'HumanBaseProfile':
-        """Возвращает профиль пользователя (объект класса UserProfile)"""
+    def profile(self):
+        """
+        Возвращает профиль пользователя (объект класса UserProfile):
+            * CompanyProfile
+            * TenantProfile
+            * WorkerProfile
+        """
         if hasattr(self, 'company_profile'):
             profile = self.company_profile
         elif hasattr(self, 'worker_profile'):
